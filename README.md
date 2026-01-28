@@ -1,74 +1,70 @@
-# Kubernetes GPU Simulator (local-only)
+# GPU Workload Simulator
 
-A lightweight, offline simulator that mimics scheduling pods onto a Kubernetes-like cluster with GPU-aware placement. No cloud APIs or networking are required; everything runs locally against JSON inputs.
+End-to-end simulator with Go backend and React/Tailwind web UI. It models request pipelines (preprocess → h2d → compute → d2h → postprocess), queueing, and GPU bandwidth/compute constraints, and emits Chrome trace JSON for visualization.
 
-## Prerequisites
-- Go 1.21+ (builds are local only; no external dependencies are fetched)
+## Requirements
+- Go (1.18 in this environment; code targets 1.22 features lightly)
+- Node 18+ / npm for the web UI
 
-## Project layout
-- `cmd/simulator/main.go` – CLI entry point
-- `pkg/cluster` – node/resource models and JSON loader
-- `pkg/workload` – pod workload models and JSON loader
-- `pkg/scheduler` – simple GPU-aware scheduler (packs GPU pods on GPU nodes; prefers non-GPU nodes for general workloads)
-- `configs/*.json` – example cluster and workload definitions
-
-## Run
+## Run backend
 ```sh
-cd /home/karthik/simulator
-# build (offline)
-go build ./cmd/simulator
-./simulator \
-  -cluster configs/cluster.example.json \
-  -workload configs/workload.example.json \
-  -strategy binpack \
-  -state \
-  -metrics \
-  -metrics-json metrics.json
+make build          # builds bin/sim-api
+./bin/sim-api       # serves on :8080
 ```
-Flags:
-- `-cluster` path to a cluster JSON file
-- `-workload` path to workload JSON file
-- `-strategy` `binpack` (default) to concentrate pods, or `spread` to balance usage
-- `-state` print final node utilization after scheduling
-- `-metrics` print aggregate scheduling/utilization metrics (default true)
-- `-metrics-json` write metrics to a JSON file for later visualization
-- `-generate-cluster` synthesize a cluster file before running. Example: `nodes=4,gpuNodes=2,gpuType=A100,gpuMemMB=80000,gpuCount=4,cpu=16000,memMB=65536,cpuGPU=32000,memGPUMB=131072`
-- `-generate-workload` synthesize a workload file. Example: `pods=50,gpuPods=20,gpuType=A100,gpuMemMB=40000,gpuCount=1,cpu=500-4000,memMB=512-8192,priority=1-100`
+Or during development:
+```sh
+make dev            # runs web dev server (:5173) and backend (:8080)
+```
 
-## Input formats
-Cluster (`configs/cluster.example.json`):
+## API (sim-api)
+- `POST /v1/scenarios` → `{scenario_id}`
+- `GET  /v1/scenarios/{id}` → scenario JSON
+- `POST /v1/runs` with `{ "scenario_id": "..." }` or `{ "scenario": { ... } }` → `{ run_id, summary, artifacts.trace }`
+- `GET  /v1/runs/{id}` → run summary
+- `GET  /v1/runs/{id}/trace` → Chrome trace JSON
+
+### Example scenario JSON
 ```json
 {
-  "nodes": [
-    {
-      "name": "gpu-a",
-      "capacity": {"cpuMilli": 32000, "memoryMB": 131072, "gpus": 4},
-      "gpu": {"type": "A100", "memoryMB": 80000, "count": 4}
-    }
+  "name": "demo",
+  "workload": { "name": "wl", "rps": 2, "duration_s": 10, "batch_size": 1 },
+  "target": {
+    "name": "L40",
+    "tflops": 180,
+    "mem_gbps": 3000,
+    "ms_per_token": 0.2,
+    "h2d_gbps": 32,
+    "d2h_gbps": 32,
+    "concurrency": 4
+  },
+  "pipeline": [
+    { "name": "preprocess", "kind": "fixed_ms", "value": 2 },
+    { "name": "h2d", "kind": "bytes", "value": 8388608 },
+    { "name": "compute", "kind": "tokens", "value": 128 },
+    { "name": "d2h", "kind": "bytes", "value": 2097152 },
+    { "name": "postprocess", "kind": "fixed_ms", "value": 1 }
   ]
 }
 ```
 
-Workload (`configs/workload.example.json`):
-```json
-{
-  "pods": [
-    {
-      "name": "trainer-0",
-      "namespace": "ml",
-      "priority": 100,
-      "gpuType": "A100",
-      "gpuMemoryMB": 60000,
-      "resources": {"cpuMilli": 4000, "memoryMB": 8192, "gpus": 1}
-    }
-  ]
-}
+### Curl quickstart
+```sh
+curl -X POST http://localhost:8080/v1/runs \
+  -H 'Content-Type: application/json' \
+  -d @scenario.json
+curl http://localhost:8080/v1/runs/run-20240101.../trace -o trace.json
 ```
+Open `trace.json` in Chrome/Perfetto (chrome://tracing).
 
-## Notes
-- The scheduler is intentionally simple: GPU pods must land on GPU-capable nodes; CPU-only pods prefer nodes without GPUs to preserve accelerators.
-- Pod `priority` (higher first) is supported; pods with the same priority keep a stable alphabetical order.
-- All logic uses only the Go standard library so it can run completely offline.
-- Extend `pkg/scheduler` to experiment with spreading, binpacking, or custom constraints.
-- Metrics are computed post-schedule so you can graph them with your favorite local tool (e.g., `jq` + `gnuplot`).
-- GPU matching honors node `gpu.type` and `gpu.memoryMB` when a pod requests `gpuType`/`gpuMemoryMB`.
+## Web UI
+Located in `web/` (Vite + React + Tailwind). It lets you build a scenario, start a run, view summary metrics, and download `trace.json`.
+- Dev: `npm install` then `npm run dev` in `web/` (or `make dev`).
+- Build: `npm run build` in `web/`.
+
+## Optional profiler agent (stub)
+To be added later; CLI skeleton can ingest Nsight outputs and convert to traces/metrics.
+
+## Tests
+```sh
+make test   # go test ./...
+```
