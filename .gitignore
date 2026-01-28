@@ -13,6 +13,11 @@ dist/
 # Go tooling
 coverage.out
 
+# Node
+node_modules/
+web/node_modules/
+web/dist/
+
 # Editor cruft
 .DS_Store
 *.swp
