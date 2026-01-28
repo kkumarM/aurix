@@ -156,6 +156,7 @@ func handleCreateRun(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]interface{}{
 		"run_id":    runID,
 		"summary":   summary,
+		"breakdown": breakdown,
 		"artifacts": map[string]string{"trace": rec.result.TracePath},
 	})
 }

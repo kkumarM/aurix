@@ -38,9 +38,7 @@ export default function App() {
       const data = await res.json()
       const runId = data.run_id
       const summary = data.summary
-      // fetch breakdown
-      const bdRes = await fetch(`${API}/v1/runs/${runId}/breakdown`)
-      const breakdown = bdRes.ok ? await bdRes.json() : null
+      const breakdown = data.breakdown || (await (await fetch(`${API}/v1/runs/${runId}/breakdown`)).json())
       const tracePath = data.artifacts?.trace
       const newRun = { id: runId, summary, trace: tracePath, breakdown, scenario: sc }
       setRun(newRun)

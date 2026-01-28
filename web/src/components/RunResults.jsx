@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import Timeline from './Timeline'
 import PlaybackControls from './PlaybackControls'
 import RequestDetails from './RequestDetails'
+import TimelineViewer from './TimelineViewer'
 
 export default function RunResults({ scenario, run, loading, error, compareA, compareB }) {
   const [zoom, setZoom] = useState(0.5)
@@ -91,6 +92,11 @@ export default function RunResults({ scenario, run, loading, error, compareA, co
       <div className="grid md:grid-cols-2 gap-4">
         <RequestDetails breakdown={run.breakdown} selectedId={selectedId} />
         <StageAggregates aggregates={run.breakdown?.stage_aggregates} />
+      </div>
+
+      <div className="space-y-3">
+        <div className="text-sm font-semibold text-slate-200">Trace Timeline</div>
+        <TimelineViewer runId={run.id} backendUrl={''} />
       </div>
 
       {compareA && compareB && (
