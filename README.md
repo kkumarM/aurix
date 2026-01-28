@@ -15,6 +15,10 @@ Or during development:
 ```sh
 make dev            # runs web dev server (:5173) and backend (:8080)
 ```
+Web build only:
+```sh
+make web-build
+```
 
 ## API (sim-api)
 - `POST /v1/scenarios` → `{scenario_id}`
@@ -27,7 +31,7 @@ make dev            # runs web dev server (:5173) and backend (:8080)
 ```json
 {
   "name": "demo",
-  "workload": { "name": "wl", "rps": 2, "duration_s": 10, "batch_size": 1 },
+  "workload": { "name": "wl", "rps": 2, "duration_s": 10, "batch_size": 1, "jitter_pct": 5 },
   "target": {
     "name": "L40",
     "tflops": 180,
@@ -61,10 +65,17 @@ Located in `web/` (Vite + React + Tailwind). It lets you build a scenario, start
 - Dev: `npm install` then `npm run dev` in `web/` (or `make dev`).
 - Build: `npm run build` in `web/`.
 
+### In-app visualization
+- Embedded timeline/Gantt with lanes (QUEUE, CPU, H2D, GPU, D2H), zoom/pan, hover tooltips, click to see request details.
+- Playback controls (play/pause, scrub) with live counters for queued/compute/transfer.
+- Run history + compare: select two runs to compare summary deltas and timelines.
+- Stage editor: add/remove/reorder stages, presets (LLM, ETL, Image), inline validation. Jitter % controls variability so p50/p90/p99 are distinct.
+
 ## Optional profiler agent (stub)
 To be added later; CLI skeleton can ingest Nsight outputs and convert to traces/metrics.
 
 ## Tests
 ```sh
 make test   # go test ./...
+make web-build  # npm install + npm run build
 ```

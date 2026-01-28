@@ -47,6 +47,9 @@ func validateWorkload(w Workload) error {
 	if w.Batch < 1 {
 		return fmt.Errorf("workload.batch_size must be >=1")
 	}
+	if w.JitterPct < 0 || w.JitterPct > 100 {
+		return fmt.Errorf("workload.jitter_pct must be between 0 and 100")
+	}
 	return nil
 }
 

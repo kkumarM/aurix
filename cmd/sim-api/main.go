@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"hash/fnv"
 	"log"
 	"net/http"
 	"os"
@@ -26,8 +27,9 @@ type runStore struct {
 }
 
 type runRecord struct {
-	result schema.RunResult
-	trace  []byte
+	result    schema.RunResult
+	trace     []byte
+	breakdown schema.Breakdown
 }
 
 type runRequest struct {
@@ -53,6 +55,7 @@ func main() {
 	r.Post("/v1/runs", handleCreateRun)
 	r.Get("/v1/runs/{id}", handleGetRun)
 	r.Get("/v1/runs/{id}/trace", handleGetTrace)
+	r.Get("/v1/runs/{id}/breakdown", handleGetBreakdown)
 
 	addr := ":8080"
 	if v := os.Getenv("PORT"); v != "" {
@@ -123,8 +126,12 @@ func handleCreateRun(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	results, tr := sim.Run(sc)
+	runID := newID("run")
+	seed := hashToInt(runID)
+
+	results, tr := sim.Run(sc, seed)
 	summary := sim.Summarize(results, sc.Workload.Duration, sc.Target)
+	breakdown := sim.Breakdown(results)
 
 	traceBytes, err := tr.Marshal()
 	if err != nil {
@@ -132,7 +139,6 @@ func handleCreateRun(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	runID := newID("run")
 	rec := runRecord{
 		result: schema.RunResult{
 			RunID:      runID,
@@ -140,7 +146,8 @@ func handleCreateRun(w http.ResponseWriter, r *http.Request) {
 			Summary:    summary,
 			TracePath:  "/v1/runs/" + runID + "/trace",
 		},
-		trace: traceBytes,
+		trace:     traceBytes,
+		breakdown: breakdown,
 	}
 	rnStore.mu.Lock()
 	rnStore.runs[runID] = rec
@@ -175,6 +182,16 @@ func handleGetTrace(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(rec.trace)
 }
 
+func handleGetBreakdown(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	rec, ok := rnStore.get(id)
+	if !ok {
+		writeError(w, http.StatusNotFound, "run not found")
+		return
+	}
+	writeJSON(w, http.StatusOK, rec.breakdown)
+}
+
 func (r *runStore) get(id string) (runRecord, bool) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -194,4 +211,10 @@ func writeError(w http.ResponseWriter, status int, msg string) {
 
 func newID(prefix string) string {
 	return prefix + "-" + time.Now().Format("20060102150405.000000000")
+}
+
+func hashToInt(s string) int64 {
+	h := fnv.New64()
+	_, _ = h.Write([]byte(s))
+	return int64(h.Sum64())
 }

@@ -33,7 +33,7 @@ func TestValidateScenario(t *testing.T) {
 
 func TestValidateScenarioFailures(t *testing.T) {
 	tests := []Scenario{
-		{},                                              // missing all
+		{}, // missing all
 		{Name: "x", Workload: Workload{Name: "w", RPS: 0, Duration: 5, Batch: 1}}, // rps 0
 	}
 	for i, s := range tests {

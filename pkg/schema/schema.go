@@ -18,10 +18,11 @@ type Stage struct {
 
 // Workload describes incoming request pattern and payload sizes.
 type Workload struct {
-	Name     string  `json:"name"`
-	RPS      float64 `json:"rps"`
-	Duration float64 `json:"duration_s"`
-	Batch    int     `json:"batch_size"`
+	Name      string  `json:"name"`
+	RPS       float64 `json:"rps"`
+	Duration  float64 `json:"duration_s"`
+	Batch     int     `json:"batch_size"`
+	JitterPct float64 `json:"jitter_pct,omitempty"` // 0-100, default 5
 }
 
 // GPUProfile captures target hardware capabilities.
@@ -51,6 +52,36 @@ type RunResult struct {
 	TracePath   string            `json:"trace_path,omitempty"`
 	TraceInline []byte            `json:"trace_inline,omitempty"`
 	Metadata    map[string]string `json:"metadata,omitempty"`
+}
+
+type StageAggregate struct {
+	Name     string  `json:"name"`
+	Category string  `json:"category"`
+	AvgMS    float64 `json:"avg_ms"`
+	TotalMS  float64 `json:"total_ms"`
+	Count    int     `json:"count"`
+}
+
+type RequestBreakdown struct {
+	ID        int           `json:"id"`
+	ArrivalMS float64       `json:"arrival_ms"`
+	StartMS   float64       `json:"start_ms"`
+	EndMS     float64       `json:"end_ms"`
+	QueueMS   float64       `json:"queue_ms"`
+	TotalMS   float64       `json:"total_ms"`
+	Stages    []StageTiming `json:"stages"`
+}
+
+type StageTiming struct {
+	Name  string  `json:"name"`
+	Cat   string  `json:"cat"`
+	Start float64 `json:"start_ms"`
+	End   float64 `json:"end_ms"`
+}
+
+type Breakdown struct {
+	StageAggregates []StageAggregate   `json:"stage_aggregates"`
+	Requests        []RequestBreakdown `json:"requests"`
 }
 
 // Summary provides top-line metrics.

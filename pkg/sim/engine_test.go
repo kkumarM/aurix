@@ -32,7 +32,7 @@ func TestRunDeterministic(t *testing.T) {
 		},
 	}
 
-	results, tr := Run(s)
+	results, tr := Run(s, 1)
 	if len(results) != 4 { // 2 rps * 2s
 		t.Fatalf("expected 4 requests, got %d", len(results))
 	}

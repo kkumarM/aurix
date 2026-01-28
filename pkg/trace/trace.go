@@ -9,7 +9,7 @@ type Event struct {
 	Name string  `json:"name"`
 	Cat  string  `json:"cat,omitempty"`
 	Ph   string  `json:"ph"`
-	Ts   float64 `json:"ts"`          // microseconds
+	Ts   float64 `json:"ts"`            // microseconds
 	Dur  float64 `json:"dur,omitempty"` // microseconds
 	Pid  int     `json:"pid,omitempty"`
 	Tid  int     `json:"tid,omitempty"`
@@ -26,15 +26,15 @@ func New() Trace {
 }
 
 // AddComplete adds a complete event given start/end in milliseconds.
-func (t *Trace) AddComplete(name, cat string, startMs, endMs float64) {
+func (t *Trace) AddComplete(name, cat string, tid int, startMs, endMs float64) {
 	ev := Event{
 		Name: name,
 		Cat:  cat,
 		Ph:   "X",
-		Ts:   startMs * 1000,          // to microseconds
+		Ts:   startMs * 1000, // to microseconds
 		Dur:  (endMs - startMs) * 1000,
 		Pid:  1,
-		Tid:  1,
+		Tid:  tid,
 	}
 	t.Events = append(t.Events, ev)
 }

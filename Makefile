@@ -10,3 +10,7 @@ dev:
 	npm --prefix web install
 	(cd web && npm run dev &) \
 	&& go run ./cmd/sim-api
+
+web-build:
+	npm --prefix web install
+	npm --prefix web run build
