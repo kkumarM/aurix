@@ -1,0 +1,25 @@
+# Build artifacts
+bin/
+build/
+dist/
+*.exe
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+*.log
+
+# Go tooling
+coverage.out
+
+# Editor cruft
+.DS_Store
+*.swp
+*.swo
+
+# Local files
+tmp/
+
+# Agent instructions (keep out of repo)
+AGENTS.md
