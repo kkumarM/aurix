@@ -4,6 +4,8 @@ import { parseTraceToSpans, Span } from '../utils/trace'
 type Props = {
   runId: string
   backendUrl: string
+  height?: number
+  compact?: boolean
 }
 
 const laneColor: Record<string, string> = {
@@ -14,7 +16,7 @@ const laneColor: Record<string, string> = {
   gpu: '#22d3ee',
 }
 
-export default function TimelineViewer({ runId, backendUrl }: Props) {
+export default function TimelineViewer({ runId, backendUrl, height = 360, compact = false }: Props) {
   const [spans, setSpans] = useState<Span[]>([])
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -134,8 +136,8 @@ export default function TimelineViewer({ runId, backendUrl }: Props) {
       {error && <div className="text-red-400 text-sm">{error} — you can still download the trace.</div>}
 
       {!loading && spans.length > 0 && (
-        <div className="flex gap-4">
-          <div className="flex-1 overflow-x-auto border border-slate-800 rounded bg-slate-900/60" style={{ position: 'relative' }}>
+        <div className={`flex gap-4 ${compact ? 'items-start' : ''}`} style={{ minHeight: height }}>
+          <div className="flex-1 overflow-x-auto border border-slate-800 rounded bg-slate-900/60" style={{ position: 'relative', minHeight: height }}>
             <Ruler end={endTime} zoom={zoom} />
             {Object.entries(lanes).map(([lane, list]) => (
               <LaneRow key={lane} label={lane.toUpperCase()} spans={list} zoom={zoom} current={current} onSelect={setSelected} selected={selected} />
@@ -144,10 +146,10 @@ export default function TimelineViewer({ runId, backendUrl }: Props) {
             {gpuSaturated && <div className="absolute top-2 right-2 text-xs bg-amber-500 text-slate-900 px-2 py-1 rounded">GPU saturated</div>}
             {active.queued > 0 && <div className="absolute top-2 right-32 text-xs bg-indigo-400 text-slate-900 px-2 py-1 rounded">Queue forming</div>}
           </div>
-          <Details span={selected} />
+          {!compact && <Details span={selected} />}
         </div>
       )}
-      <HelpPanel open={showHelp} toggle={() => setShowHelp((p) => !p)} />
+      {!compact && <HelpPanel open={showHelp} toggle={() => setShowHelp((p) => !p)} />}
     </div>
   )
 }
