@@ -1,4 +1,5 @@
 import { defaultScenario } from '../components/ScenarioPanel'
+import yaml from 'js-yaml'
 
 const INDEX_KEY = 'gpu-sim:scenarios:index'
 
@@ -43,4 +44,24 @@ export function loadLastScenario() {
   if (!idx.length) return defaultScenario
   const latest = idx[idx.length - 1]
   return loadScenario(latest.id) || defaultScenario
+}
+
+export function exportScenario(format: 'json' | 'yaml', scenario: any) {
+  const payload = { version: 1, scenario }
+  if (format === 'yaml') {
+    return yaml.dump(payload)
+  }
+  return JSON.stringify(payload, null, 2)
+}
+
+export function importScenario(text: string) {
+  try {
+    let obj: any
+    if (text.trim().startsWith('{')) obj = JSON.parse(text)
+    else obj = yaml.load(text)
+    if (obj?.scenario) return obj.scenario
+  } catch {
+    return null
+  }
+  return null
 }
