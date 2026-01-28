@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react'
 import Field from './forms/Field'
+import { inputBase, selectBase } from '../styles/formClasses'
 
 const typeUnits = {
   fixed_ms: 'ms',
@@ -87,7 +88,7 @@ export default function PipelineEditor({ pipeline, setPipeline }: { pipeline: an
       <div className="flex items-center gap-2 text-sm">
         <div className="font-semibold text-slate-200">Pipeline</div>
         <div className="ml-auto flex gap-2">
-          <select className="input w-40 text-xs bg-slate-900/60 text-slate-100 border-slate-700 focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-400/30" onChange={(e) => applyPreset(e.target.value)}>
+          <select className={`${selectBase} w-40 text-xs`} onChange={(e) => applyPreset(e.target.value)}>
             <option value="">Presets…</option>
             <option value="llm">LLM Inference</option>
             <option value="image">Image Inference</option>
@@ -116,13 +117,13 @@ export default function PipelineEditor({ pipeline, setPipeline }: { pipeline: an
             onDragEnd={onDragEnd}
           >
             <div className="cursor-grab text-slate-500">⋮⋮</div>
-            <input className="input h-10 bg-slate-900/60 text-slate-100 placeholder-slate-500 border-slate-700 focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-400/30" value={st.name} onChange={(e) => update(idx, 'name', e.target.value)} />
-            <select className="input h-10 bg-slate-900/60 text-slate-100 border-slate-700 focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-400/30" value={st.kind} onChange={(e) => update(idx, 'kind', e.target.value)}>
+            <input className={inputBase} value={st.name} onChange={(e) => update(idx, 'name', e.target.value)} />
+            <select className={selectBase} value={st.kind} onChange={(e) => update(idx, 'kind', e.target.value)}>
               <option value="fixed_ms">fixed_ms</option>
               <option value="bytes">bytes</option>
               <option value="tokens">tokens</option>
             </select>
-            <input type="number" className="input h-10 bg-slate-900/60 text-slate-100 placeholder-slate-500 border-slate-700 focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-400/30" value={st.value} onChange={(e) => update(idx, 'value', parseFloat(e.target.value))} />
+            <input type="number" className={inputBase} value={st.value} onChange={(e) => update(idx, 'value', parseFloat(e.target.value))} />
             <span className={`text-center text-xs px-2 py-1 rounded border ${typeColors[st.kind] || 'border-slate-700 text-slate-300'}`}>{typeUnits[st.kind]}</span>
             <div className="flex justify-end gap-2 text-xs">
               <button className="px-2 py-1 bg-slate-700 rounded" onClick={() => duplicate(idx)}>Copy</button>
@@ -137,19 +138,19 @@ export default function PipelineEditor({ pipeline, setPipeline }: { pipeline: an
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-20">
           <div className="bg-slate-900 border border-slate-700 rounded-lg p-4 w-80 space-y-3">
             <div className="text-lg font-semibold text-slate-100">Add stage</div>
-            <Field label="Name">
-              <input className="input bg-slate-900/60 text-slate-100 placeholder-slate-500 border-slate-700 focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-400/30" value={newStage.name} onChange={(e) => setNewStage({ ...newStage, name: e.target.value })} />
-            </Field>
-            <Field label="Type">
-              <select className="input bg-slate-900/60 text-slate-100 border-slate-700 focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-400/30" value={newStage.kind} onChange={(e) => setNewStage({ ...newStage, kind: e.target.value })}>
-                <option value="fixed_ms">fixed_ms</option>
-                <option value="bytes">bytes</option>
-                <option value="tokens">tokens</option>
-              </select>
-            </Field>
-            <Field label="Value">
-              <input className="input bg-slate-900/60 text-slate-100 placeholder-slate-500 border-slate-700 focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-400/30" type="number" value={newStage.value} onChange={(e) => setNewStage({ ...newStage, value: parseFloat(e.target.value) })} />
-            </Field>
+              <Field label="Name">
+                <input className={inputBase} value={newStage.name} onChange={(e) => setNewStage({ ...newStage, name: e.target.value })} />
+              </Field>
+              <Field label="Type">
+                <select className={selectBase} value={newStage.kind} onChange={(e) => setNewStage({ ...newStage, kind: e.target.value })}>
+                  <option value="fixed_ms">fixed_ms</option>
+                  <option value="bytes">bytes</option>
+                  <option value="tokens">tokens</option>
+                </select>
+              </Field>
+              <Field label="Value">
+                <input className={inputBase} type="number" value={newStage.value} onChange={(e) => setNewStage({ ...newStage, value: parseFloat(e.target.value) })} />
+              </Field>
             <div className="flex justify-end gap-2">
               <button className="px-3 py-1 bg-slate-700 rounded" onClick={() => setShowAdd(false)}>Cancel</button>
               <button className="px-3 py-1 bg-emerald-500 text-slate-950 rounded" onClick={addStage}>Add</button>
