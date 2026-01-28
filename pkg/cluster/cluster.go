@@ -13,6 +13,16 @@ type Resource struct {
 	GPUs     int `json:"gpus"`
 }
 
+// GPU describes identical GPUs attached to a node.
+type GPU struct {
+	Type     string  `json:"type,omitempty"`
+	MemoryMB int     `json:"memoryMB,omitempty"`
+	Count    int     `json:"count,omitempty"`
+	SMs      int     `json:"sms,omitempty"`     // streaming multiprocessors
+	TFLOPS   float64 `json:"tflops,omitempty"`  // peak FP32 TFLOPS
+	MemGBps  float64 `json:"memGBps,omitempty"` // memory bandwidth in GB/s
+}
+
 // Add increases the resource values in place.
 func (r *Resource) Add(other Resource) {
 	r.CPUMilli += other.CPUMilli
@@ -33,6 +43,7 @@ func (r Resource) Minus(other Resource) Resource {
 type Node struct {
 	Name      string   `json:"name"`
 	Capacity  Resource `json:"capacity"`
+	GPU       GPU      `json:"gpu,omitempty"`
 	Allocated Resource `json:"allocated,omitempty"`
 }
 
@@ -44,9 +55,13 @@ func (n *Node) Remaining() Resource {
 // CanSchedule reports whether the node has enough free capacity for req.
 func (n *Node) CanSchedule(req Resource) bool {
 	remain := n.Remaining()
+	gpuOK := remain.GPUs >= req.GPUs
+	if n.HasGPU() {
+		gpuOK = n.GPUAvailable() >= req.GPUs
+	}
 	return remain.CPUMilli >= req.CPUMilli &&
 		remain.MemoryMB >= req.MemoryMB &&
-		remain.GPUs >= req.GPUs
+		gpuOK
 }
 
 // Allocate consumes resources on the node. Caller should check CanSchedule first.
@@ -56,7 +71,15 @@ func (n *Node) Allocate(req Resource) {
 
 // HasGPU indicates the node exposes at least one GPU.
 func (n *Node) HasGPU() bool {
-	return n.Capacity.GPUs > 0
+	return n.GPU.Count > 0
+}
+
+// GPUAvailable returns remaining GPU devices on the node.
+func (n *Node) GPUAvailable() int {
+	if n.GPU.Count == 0 {
+		return 0
+	}
+	return n.GPU.Count - n.Allocated.GPUs
 }
 
 // Cluster is a collection of nodes.

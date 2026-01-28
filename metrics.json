@@ -1,0 +1,11 @@
+{
+  "totalPods": 5,
+  "scheduledPods": 5,
+  "unscheduledPods": 0,
+  "cpuCapacityMilli": 44000,
+  "cpuUsedMilli": 16500,
+  "memCapacityMB": 131072,
+  "memUsedMB": 25088,
+  "gpuCapacity": 3,
+  "gpuUsed": 2
+}

@@ -1,8 +1,8 @@
 {
   "nodes": [
-    {"name": "gpu-a", "capacity": {"cpuMilli": 16000, "memoryMB": 65536, "gpus": 2}},
-    {"name": "gpu-b", "capacity": {"cpuMilli": 12000, "memoryMB": 32768, "gpus": 1}},
-    {"name": "compute-1", "capacity": {"cpuMilli": 8000, "memoryMB": 16384, "gpus": 0}},
-    {"name": "compute-2", "capacity": {"cpuMilli": 8000, "memoryMB": 16384, "gpus": 0}}
+    {"name": "gpu-a", "capacity": {"cpuMilli": 32000, "memoryMB": 131072, "gpus": 4}, "gpu": {"type": "A100", "memoryMB": 80000, "count": 4, "sms": 108, "tflops": 19.5, "memGBps": 1555}},
+    {"name": "gpu-b", "capacity": {"cpuMilli": 24000, "memoryMB": 65536, "gpus": 2}, "gpu": {"type": "L40", "memoryMB": 46080, "count": 2, "sms": 72, "tflops": 18.0, "memGBps": 300}},
+    {"name": "compute-1", "capacity": {"cpuMilli": 16000, "memoryMB": 32768, "gpus": 0}},
+    {"name": "compute-2", "capacity": {"cpuMilli": 16000, "memoryMB": 32768, "gpus": 0}}
   ]
 }

@@ -10,8 +10,8 @@ import (
 
 // Decision captures the scheduling outcome for a pod.
 type Decision struct {
-	Pod   workload.Pod
-	Node  string
+	Pod    workload.Pod
+	Node   string
 	Reason string
 }
 
@@ -58,14 +58,14 @@ func chooseNode(c *cluster.Cluster, pod workload.Pod, strategy Strategy) (int, s
 	req := pod.Requests
 
 	if req.GPUs > 0 {
-		idx := pickGPUNode(c, req, strategy)
+		idx := pickGPUNode(c, pod, strategy)
 		if idx >= 0 {
 			return idx, "scheduled on GPU-capable node"
 		}
 		if !clusterHasGPU(c) {
 			return -1, "no GPU nodes available"
 		}
-		return -1, "GPU nodes lack free capacity for this pod"
+		return -1, "GPU nodes lack free capacity or matching type/memory for this pod"
 	}
 
 	idx := pickStandardNode(c, req, strategy)
@@ -79,7 +79,7 @@ func chooseNode(c *cluster.Cluster, pod workload.Pod, strategy Strategy) (int, s
 	return -1, "no nodes have sufficient free CPU/memory"
 }
 
-func pickGPUNode(c *cluster.Cluster, req cluster.Resource, strategy Strategy) int {
+func pickGPUNode(c *cluster.Cluster, reqPod workload.Pod, strategy Strategy) int {
 	bestIdx := -1
 	bestRemainingGPU := math.MaxInt
 	bestRemainingCPU := math.MaxInt
@@ -88,10 +88,10 @@ func pickGPUNode(c *cluster.Cluster, req cluster.Resource, strategy Strategy) in
 
 	for i := range c.Nodes {
 		node := &c.Nodes[i]
-		if !node.HasGPU() || !node.CanSchedule(req) {
+		if !node.HasGPU() || !node.CanSchedule(reqPod.Requests) || !gpuConstraintsMatch(node, reqPod) {
 			continue
 		}
-		after := node.Remaining().Minus(req)
+		after := node.Remaining().Minus(reqPod.Requests)
 		switch strategy {
 		case Spread:
 			if after.GPUs > worstRemainingGPU ||
@@ -184,4 +184,21 @@ func clusterHasGPU(c *cluster.Cluster) bool {
 		}
 	}
 	return false
+}
+
+// gpuConstraintsMatch ensures GPU count, type, and memory fit the pod request.
+func gpuConstraintsMatch(n *cluster.Node, pod workload.Pod) bool {
+	if !n.HasGPU() {
+		return false
+	}
+	if pod.Requests.GPUs > n.GPUAvailable() {
+		return false
+	}
+	if pod.GPUType != "" && n.GPU.Type != "" && pod.GPUType != n.GPU.Type {
+		return false
+	}
+	if pod.GPUMemMB > 0 && n.GPU.MemoryMB > 0 && n.GPU.MemoryMB < pod.GPUMemMB {
+		return false
+	}
+	return true
 }

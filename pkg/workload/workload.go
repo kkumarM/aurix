@@ -10,10 +10,15 @@ import (
 
 // Pod is a simplified workload specification.
 type Pod struct {
-	Name      string          `json:"name"`
-	Namespace string          `json:"namespace"`
-	Priority  int             `json:"priority,omitempty"`
+	Name      string           `json:"name"`
+	Namespace string           `json:"namespace"`
+	Priority  int              `json:"priority,omitempty"`
 	Requests  cluster.Resource `json:"resources"`
+	GPUType   string           `json:"gpuType,omitempty"`
+	GPUMemMB  int              `json:"gpuMemoryMB,omitempty"`
+	// Simulation hints (optional): total floating-point ops and bytes moved by the main workload.
+	SimFLOPs float64 `json:"simFLOPs,omitempty"`
+	SimBytes float64 `json:"simBytes,omitempty"`
 }
 
 // FullName combines namespace and name for logging.
