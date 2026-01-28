@@ -1,31 +1,39 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { parseTraceToSpans, Span } from '../utils/trace'
+import { timelineColors } from '../styles/timelineColors'
 
 type Props = {
   runId: string
   backendUrl: string
   height?: number
   compact?: boolean
+  current: number
+  onCurrentChange: (v: number) => void
+  zoom: number
+  highlightActive: boolean
+  onActiveChange?: (counters: { queued: number; gpu: number; transfer: number; cpu: number; total: number }) => void
+  onMeta?: (meta: { end: number }) => void
+  selected: Span | null
+  onSelect: (s: Span | null) => void
 }
 
-const laneColor: Record<string, string> = {
-  queue: '#fbbf24',
-  cpu: '#60a5fa',
-  h2d: '#a855f7',
-  d2h: '#ec4899',
-  gpu: '#22d3ee',
-}
-
-export default function TimelineViewer({ runId, backendUrl, height = 360, compact = false }: Props) {
+export default function TimelineViewer({
+  runId,
+  backendUrl,
+  height = 360,
+  compact = false,
+  current,
+  onCurrentChange,
+  zoom,
+  highlightActive,
+  onActiveChange,
+  onMeta,
+  selected,
+  onSelect,
+}: Props) {
   const [spans, setSpans] = useState<Span[]>([])
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const [zoom, setZoom] = useState(0.4) // px per ms
-  const [current, setCurrent] = useState(0)
-  const [playing, setPlaying] = useState(false)
-  const [speed, setSpeed] = useState(1)
-  const [selected, setSelected] = useState<Span | null>(null)
-  const [showHelp, setShowHelp] = useState(false)
   const rafRef = useRef<number>()
 
   const endTime = useMemo(() => spans.reduce((m, s) => Math.max(m, s.endMs), 0), [spans])
@@ -59,21 +67,8 @@ export default function TimelineViewer({ runId, backendUrl, height = 360, compac
   }, [runId, backendUrl])
 
   useEffect(() => {
-    if (!playing) return
-    const tick = () => {
-      setCurrent((c) => {
-        const next = c + 16 * speed
-        if (next >= endTime) {
-          setPlaying(false)
-          return endTime
-        }
-        return next
-      })
-      rafRef.current = requestAnimationFrame(tick)
-    }
-    rafRef.current = requestAnimationFrame(tick)
-    return () => rafRef.current && cancelAnimationFrame(rafRef.current)
-  }, [playing, speed, endTime])
+    onMeta?.({ end: endTime })
+  }, [endTime, onMeta])
 
   const active = useMemo(() => {
     const byLane: Record<string, number> = {}
@@ -90,6 +85,10 @@ export default function TimelineViewer({ runId, backendUrl, height = 360, compac
     const cpu = byLane['cpu'] || 0
     return { total, byLane, queued, gpu, transfer, cpu }
   }, [spans, current])
+
+  useEffect(() => {
+    onActiveChange?.(active)
+  }, [active, onActiveChange])
 
   const gpuSaturated = useMemo(() => {
     if (!spans.length) return false
@@ -139,8 +138,8 @@ export default function TimelineViewer({ runId, backendUrl, height = 360, compac
         <div className={`flex gap-4 ${compact ? 'items-start' : ''}`} style={{ minHeight: height }}>
           <div className="flex-1 overflow-x-auto border border-slate-800 rounded bg-slate-900/60" style={{ position: 'relative', minHeight: height }}>
             <Ruler end={endTime} zoom={zoom} />
-            {Object.entries(lanes).map(([lane, list]) => (
-              <LaneRow key={lane} label={lane.toUpperCase()} spans={list} zoom={zoom} current={current} onSelect={setSelected} selected={selected} />
+            {Object.entries(lanes).map(([lane, list], idx) => (
+              <LaneRow key={lane} laneIndex={idx} label={lane.toUpperCase()} spans={list} zoom={zoom} current={current} onSelect={onSelect} selected={selected} highlightActive={highlightActive} />
             ))}
             <GridOverlay end={endTime} zoom={zoom} />
             {gpuSaturated && <div className="absolute top-2 right-2 text-xs bg-amber-500 text-slate-900 px-2 py-1 rounded">GPU saturated</div>}
@@ -154,23 +153,26 @@ export default function TimelineViewer({ runId, backendUrl, height = 360, compac
   )
 }
 
-function LaneRow({ label, spans, zoom, current, onSelect, selected }: { label: string, spans: Span[], zoom: number, current: number, onSelect: (s: Span) => void, selected: Span | null }) {
+function LaneRow({ label, spans, zoom, current, onSelect, selected, laneIndex, highlightActive }: { label: string, spans: Span[], zoom: number, current: number, onSelect: (s: Span) => void, selected: Span | null, laneIndex: number, highlightActive: boolean }) {
   const maxEnd = spans.reduce((m, s) => Math.max(m, s.endMs), 0)
   const width = Math.max(maxEnd * zoom + 200, 600)
   return (
-    <div className="relative border-t border-slate-800" style={{ height: 40 }}>
-      <div className="sticky left-0 top-0 w-20 h-full flex items-center justify-center text-xs text-slate-400 bg-slate-900/90 backdrop-blur border-r border-slate-800 z-10">{label}</div>
+    <div className="relative border-t border-slate-800" style={{ height: 40, backgroundColor: laneIndex % 2 === 0 ? 'rgba(15,23,42,0.4)' : 'rgba(15,23,42,0.2)' }}>
+      <div className="sticky left-0 top-0 w-20 h-full flex items-center justify-center text-xs text-slate-300 bg-slate-900/90 backdrop-blur border-r border-slate-800 z-10">{label}</div>
       <div className="absolute left-20 right-0 top-0 h-full" style={{ width }}>
         {spans.map((s, i) => {
           const left = s.startMs * zoom
           const widthPx = Math.max(2, s.durMs * zoom)
           const active = current >= s.startMs && current <= s.endMs
-          const color = laneColor[s.lane] || '#22d3ee'
+          const colors = timelineColors[s.lane as keyof typeof timelineColors] || timelineColors.cpu
+          const isSelected = selected === s
+          const baseClass = isSelected ? colors.selected : active && highlightActive ? colors.active : colors.base
+          const opacity = isSelected ? 1 : active ? 1 : highlightActive ? 0.25 : 0.55
           return (
             <div
               key={i}
-              className="absolute h-6 rounded text-[10px] px-1 overflow-hidden whitespace-nowrap cursor-pointer"
-              style={{ left, width: widthPx, top: 8, background: color, opacity: active ? 1 : 0.35, border: selected === s ? '2px solid white' : '1px solid rgba(0,0,0,0.3)' }}
+              className={`absolute h-6 rounded text-[10px] px-1 overflow-hidden whitespace-nowrap cursor-pointer ${baseClass}`}
+              style={{ left, width: widthPx, top: 8, opacity }}
               title={`${s.name} (${s.lane}) ${s.durMs.toFixed(2)} ms`}
               onClick={() => onSelect(s)}
             >
@@ -228,24 +230,6 @@ function Details({ span }: { span: Span | null }) {
 function GridOverlay({ end, zoom }: { end: number, zoom: number }) {
   const step = chooseStep(end)
   const width = Math.max(end * zoom + 200, 600)
-  const bg = `repeating-linear-gradient(to right, rgba(255,255,255,0.05) 0, rgba(255,255,255,0.05) 1px, transparent 1px, transparent ${step * zoom}px)`
+  const bg = `repeating-linear-gradient(to right, rgba(255,255,255,0.03) 0, rgba(255,255,255,0.03) 1px, transparent 1px, transparent ${step * zoom}px)`
   return <div className="pointer-events-none absolute inset-0" style={{ width, backgroundImage: bg }} />
-}
-
-function HelpPanel({ open, toggle }: { open: boolean, toggle: () => void }) {
-  return (
-    <div className="border border-slate-800 rounded bg-slate-900/70">
-      <button className="w-full text-left px-3 py-2 text-sm text-slate-200 flex justify-between" onClick={toggle}>
-        <span>How to read this timeline</span>
-        <span>{open ? '−' : '+'}</span>
-      </button>
-      {open && (
-        <div className="px-3 pb-3 text-xs text-slate-300 space-y-2">
-          <div>Lanes: QUEUE (waiting), CPU (pre/post), H2D/D2H (transfers), GPU (compute). Colored bars show when each stage ran.</div>
-          <div>Each bar = one span for a request stage. Overlap means stages ran in parallel (different requests or different resources).</div>
-          <div>Red time cursor shows current playback position. Active spans are bright; inactive are dimmed.</div>
-        </div>
-      )}
-    </div>
-  )
 }

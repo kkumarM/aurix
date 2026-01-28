@@ -3,6 +3,7 @@ import ScenarioPanel from './components/ScenarioPanel'
 import RunResults from './components/RunResults'
 import RunHistory from './components/RunHistory'
 import TimelineViewer from './components/TimelineViewer'
+import TimelineControls from './components/TimelineControls'
 import CompareView from './components/CompareView'
 import Tabs from './components/Tabs'
 import ResultCards from './components/ResultCards'
@@ -29,6 +30,16 @@ export default function App() {
     return saved || 'results'
   })
   const [timelineHeight, setTimelineHeight] = useState(false)
+  const [timelineCurrent, setTimelineCurrent] = useState(0)
+  const [timelineZoom, setTimelineZoom] = useState(0.4)
+  const [highlightActive, setHighlightActive] = useState(true)
+  const [inspectorOpen, setInspectorOpen] = useState(() => {
+    const v = typeof localStorage !== 'undefined' ? localStorage.getItem('inspector_open') : null
+    return v ? v === '1' : false
+  })
+  const [counters, setCounters] = useState({ queued: 0, gpu: 0, transfer: 0, cpu: 0, total: 0 })
+  const [timelineMeta, setTimelineMeta] = useState({ end: 0 })
+  const [selectedSpan, setSelectedSpan] = useState(null)
   const [collapsed, setCollapsed] = useState(false)
   const [panelWidth, setPanelWidth] = useState(() => {
     const v = typeof localStorage !== 'undefined' ? localStorage.getItem('panel_width') : null
@@ -216,23 +227,54 @@ export default function App() {
                   {!run && <div className="text-slate-400 text-sm">Run a scenario to see the timeline.</div>}
                   {run && (
                     <>
-                      <div className="flex items-center gap-3 text-sm">
-                        <button
-                          className="px-3 py-1 rounded bg-slate-800 border border-slate-700 text-slate-200"
-                          onClick={() => setTimelineHeight((p) => !p)}
-                        >
-                          {timelineHeight ? 'Normal height' : 'Full height'}
-                        </button>
-                        <span className="text-slate-500 text-xs">Request details & breakdown on the right</span>
-                      </div>
-                      <div className={`grid gap-3 ${timelineHeight ? 'lg:grid-cols-[1fr,280px]' : 'lg:grid-cols-[1fr,260px]'}`}>
-                        <div className={timelineHeight ? 'min-h-[420px]' : 'min-h-[340px]'}>
-                          <TimelineViewer runId={run.id} backendUrl={API} height={timelineHeight ? 520 : 360} />
+                      <TimelineControls
+                        playing={playing}
+                        onTogglePlay={() => setPlaying((p) => !p)}
+                        current={timelineCurrent}
+                        end={timelineMeta.end}
+                        onScrub={(v) => { setTimelineCurrent(v); setPlaying(false) }}
+                        speed={speed}
+                        onSpeed={setSpeed}
+                        zoom={timelineZoom}
+                        onZoom={setTimelineZoom}
+                        highlight={highlightActive}
+                        onHighlight={setHighlightActive}
+                        counters={counters}
+                        onToggleInspector={() => {
+                          const next = !inspectorOpen
+                          setInspectorOpen(next)
+                          localStorage.setItem('inspector_open', next ? '1' : '0')
+                        }}
+                      />
+
+                      <div className={`grid gap-3 ${inspectorOpen ? 'lg:grid-cols-[1fr,280px]' : 'lg:grid-cols-[1fr]'} `} style={{ minHeight: timelineHeight ? 520 : 420 }}>
+                        <div className="min-h-[420px]">
+                          <TimelineViewer
+                            runId={run.id}
+                            backendUrl={API}
+                            height={timelineHeight ? 520 : 420}
+                            current={timelineCurrent}
+                            onCurrentChange={(v) => { setTimelineCurrent(v) }}
+                            zoom={timelineZoom}
+                            highlightActive={highlightActive}
+                            onActiveChange={setCounters}
+                            onMeta={setTimelineMeta}
+                            selected={selectedSpan}
+                            onSelect={setSelectedSpan}
+                            compact={inspectorOpen === false}
+                          />
                         </div>
-                        <div className="space-y-3">
-                          <RequestDetails breakdown={run.breakdown} selectedId={null} />
-                          <StageAggregates aggregates={run.breakdown?.stage_aggregates} />
-                        </div>
+                        {inspectorOpen && (
+                          <div className="space-y-3 bg-slate-900/70 border border-slate-800 rounded p-3">
+                            <div className="flex items-center justify-between text-sm text-slate-200">
+                              <span>Inspector</span>
+                              <button className="text-slate-400" onClick={() => { setInspectorOpen(false); localStorage.setItem('inspector_open', '0') }}>✕</button>
+                            </div>
+                            <div className="text-xs text-slate-500">Selected span details and stage breakdown</div>
+                            <RequestDetails breakdown={run.breakdown} selectedId={selectedSpan ? selectedSpan.requestId : null} />
+                            <StageAggregates aggregates={run.breakdown?.stage_aggregates} />
+                          </div>
+                        )}
                       </div>
                     </>
                   )}
