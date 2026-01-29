@@ -110,33 +110,12 @@ export default function TimelineViewer({
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-3 text-sm">
-        <button className="px-3 py-1 rounded bg-emerald-500 text-slate-950 font-semibold" onClick={() => setPlaying((p) => !p)}>
-          {playing ? 'Pause' : 'Play'}
-        </button>
-        <input type="range" min={0} max={endTime || 1} value={current} onChange={(e) => { setCurrent(parseFloat(e.target.value)); setPlaying(false) }} className="w-full" />
-        <select className="input w-24" value={speed} onChange={(e) => setSpeed(parseFloat(e.target.value))}>
-          {[0.5, 1, 2, 4].map(s => <option key={s} value={s}>{s}x</option>)}
-        </select>
-        <div className="flex items-center gap-2 text-xs text-slate-300">
-          <span>Active: {active.total}</span>
-          <span>Queued: {active.queued}</span>
-          <span>GPU: {active.gpu}</span>
-          <span>Transfer: {active.transfer}</span>
-          <span>CPU: {active.cpu}</span>
-        </div>
-      </div>
-      <div className="flex items-center gap-3 text-sm">
-        <label className="text-slate-400">Zoom</label>
-        <input type="range" min={0.1} max={2} step={0.1} value={zoom} onChange={(e) => setZoom(parseFloat(e.target.value))} />
-      </div>
-
       {loading && <div className="h-40 bg-slate-800/40 rounded animate-pulse" />}
       {error && <div className="text-red-400 text-sm">{error} — you can still download the trace.</div>}
 
       {!loading && spans.length > 0 && (
         <div className={`flex gap-4 ${compact ? 'items-start' : ''}`} style={{ minHeight: height }}>
-          <div className="flex-1 overflow-x-auto border border-slate-800 rounded bg-slate-900/60" style={{ position: 'relative', minHeight: height }}>
+          <div className="flex-1 overflow-x-auto border border-slate-800 rounded bg-slate-900/80" style={{ position: 'relative', minHeight: height }}>
             <Ruler end={endTime} zoom={zoom} />
             {Object.entries(lanes).map(([lane, list], idx) => (
               <LaneRow key={lane} laneIndex={idx} label={lane.toUpperCase()} spans={list} zoom={zoom} current={current} onSelect={onSelect} selected={selected} highlightActive={highlightActive} />
@@ -148,7 +127,6 @@ export default function TimelineViewer({
           {!compact && <Details span={selected} />}
         </div>
       )}
-      {!compact && <HelpPanel open={showHelp} toggle={() => setShowHelp((p) => !p)} />}
     </div>
   )
 }
