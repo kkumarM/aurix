@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import ScenarioPanel from './components/ScenarioPanel'
 import RunResults from './components/RunResults'
 import RunHistory from './components/RunHistory'
@@ -11,6 +11,7 @@ import RequestDetails from './components/RequestDetails'
 import StageAggregates from './components/StageAggregates'
 import { defaultScenario } from './components/ScenarioPanel'
 import { saveScenarioEntry, loadScenario, deleteScenario, loadIndex, loadLastScenario } from './utils/scenarioStore'
+import AboutAurix from './components/AboutAurix'
 
 const API = '' // proxied to 8080 via Vite config
 
@@ -33,6 +34,8 @@ export default function App() {
   const [timelineCurrent, setTimelineCurrent] = useState(0)
   const [timelineZoom, setTimelineZoom] = useState(0.4)
   const [highlightActive, setHighlightActive] = useState(true)
+  const [playing, setPlaying] = useState(false)
+  const [speed, setSpeed] = useState(1)
   const [inspectorOpen, setInspectorOpen] = useState(() => {
     const v = typeof localStorage !== 'undefined' ? localStorage.getItem('inspector_open') : null
     return v ? v === '1' : false
@@ -40,6 +43,7 @@ export default function App() {
   const [counters, setCounters] = useState({ queued: 0, gpu: 0, transfer: 0, cpu: 0, total: 0 })
   const [timelineMeta, setTimelineMeta] = useState({ end: 0 })
   const [selectedSpan, setSelectedSpan] = useState(null)
+  const rafRef = useRef()
   const [collapsed, setCollapsed] = useState(false)
   const [panelWidth, setPanelWidth] = useState(() => {
     const v = typeof localStorage !== 'undefined' ? localStorage.getItem('panel_width') : null
@@ -135,6 +139,24 @@ export default function App() {
 
   const openTimeline = () => setActiveTab('timeline')
 
+  // timeline playback loop
+  useEffect(() => {
+    if (!playing) return
+    const tick = () => {
+      setTimelineCurrent((c) => {
+        const next = c + 16 * speed
+        if (next >= timelineMeta.end) {
+          setPlaying(false)
+          return timelineMeta.end
+        }
+        return next
+      })
+      rafRef.current = requestAnimationFrame(tick)
+    }
+    rafRef.current = requestAnimationFrame(tick)
+    return () => rafRef.current && cancelAnimationFrame(rafRef.current)
+  }, [playing, speed, timelineMeta.end])
+
   const handleSave = (sc) => {
     try {
       const { index } = saveScenarioEntry(sc)
@@ -209,6 +231,7 @@ export default function App() {
                 { id: 'results', label: 'Results' },
                 { id: 'timeline', label: 'Timeline' },
                 { id: 'compare', label: 'Compare' },
+                { id: 'docs', label: 'Docs' },
                 { id: 'help', label: 'Help' },
               ]}
               active={activeTab}
@@ -283,6 +306,12 @@ export default function App() {
 
               {activeTab === 'compare' && (
                 <CompareView runs={runs} compareIds={compareIds} onSelect={handleCompare} backendUrl={API} />
+              )}
+
+              {activeTab === 'docs' && (
+                <div className="p-2">
+                  <AboutAurix />
+                </div>
               )}
 
               {activeTab === 'help' && (
