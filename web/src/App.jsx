@@ -285,7 +285,18 @@ export default function App() {
                     </div>
                   ) : (
                     <>
-                      <RunResults scenario={scenario} run={run} loading={loading} error={error} onOpenTimeline={openTimeline} diagnostics={diagnostics} />
+                      <RunResults
+                        scenario={scenario}
+                        run={run}
+                        loading={loading}
+                        error={error}
+                        onOpenTimeline={openTimeline}
+                        diagnostics={diagnostics}
+                        backendUrl={API}
+                        addRun={addRun}
+                        setRun={setRun}
+                        setActiveTab={setActiveTab}
+                      />
                     </>
                   )}
                 </div>
