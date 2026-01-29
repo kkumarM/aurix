@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { parseTraceToSpans, Span } from '../utils/trace'
 import { timelineColors } from '../styles/timelineColors'
+import { computeDiagnosticsFromSpans } from '../utils/diagnostics'
 
 type Props = {
   runId: string
@@ -11,10 +12,12 @@ type Props = {
   onCurrentChange: (v: number) => void
   zoom: number
   highlightActive: boolean
+  heatOverlay: boolean
   onActiveChange?: (counters: { queued: number; gpu: number; transfer: number; cpu: number; total: number }) => void
   onMeta?: (meta: { end: number }) => void
   selected: Span | null
   onSelect: (s: Span | null) => void
+  onDiagnostics?: (d: any) => void
 }
 
 export default function TimelineViewer({
@@ -26,14 +29,17 @@ export default function TimelineViewer({
   onCurrentChange,
   zoom,
   highlightActive,
+  heatOverlay,
   onActiveChange,
   onMeta,
   selected,
   onSelect,
+  onDiagnostics,
 }: Props) {
   const [spans, setSpans] = useState<Span[]>([])
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [diag, setDiag] = useState<any>(null)
   const rafRef = useRef<number>()
 
   const endTime = useMemo(() => spans.reduce((m, s) => Math.max(m, s.endMs), 0), [spans])
@@ -59,8 +65,11 @@ export default function TimelineViewer({
       .then((json) => {
         const parsed = parseTraceToSpans(json)
         setSpans(parsed)
-        setCurrent(0)
-        setSelected(null)
+        onCurrentChange(0)
+        onSelect(null)
+        const d = computeDiagnosticsFromSpans(parsed)
+        setDiag(d)
+        onDiagnostics?.(d)
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false))
@@ -90,21 +99,10 @@ export default function TimelineViewer({
     onActiveChange?.(active)
   }, [active, onActiveChange])
 
-  const gpuSaturated = useMemo(() => {
-    if (!spans.length) return false
-    const window = 500 // ms
-    const start = Math.max(0, current - window)
-    const end = current
-    const gpuSpans = spans.filter((s) => s.lane === 'gpu')
-    if (!gpuSpans.length || end <= start) return false
-    let covered = 0
-    gpuSpans.forEach((s) => {
-      const overlap = Math.min(end, s.endMs) - Math.max(start, s.startMs)
-      if (overlap > 0) covered += overlap
-    })
-    const utilization = covered / (end - start)
-    return utilization >= 0.8
-  }, [spans, current])
+  const heat = diag?.heat || {}
+  const binWidth = diag?.binWidth || 0
+  const minStart = useMemo(() => spans.length ? Math.min(...spans.map((s) => s.startMs)) : 0, [spans])
+  const saturation = diag?.saturation || []
 
   if (!runId) return null
 
@@ -116,13 +114,28 @@ export default function TimelineViewer({
       {!loading && spans.length > 0 && (
         <div className={`flex gap-4 ${compact ? 'items-start' : ''}`} style={{ minHeight: height }}>
           <div className="flex-1 overflow-x-auto border border-slate-800 rounded bg-slate-900/80" style={{ position: 'relative', minHeight: height }}>
+            <div className="absolute right-3 top-1 text-[11px] text-slate-500">Bars = spans • Shaded = density</div>
             <Ruler end={endTime} zoom={zoom} />
             {Object.entries(lanes).map(([lane, list], idx) => (
-              <LaneRow key={lane} laneIndex={idx} label={lane.toUpperCase()} spans={list} zoom={zoom} current={current} onSelect={onSelect} selected={selected} highlightActive={highlightActive} />
+              <LaneRow
+                key={lane}
+                laneIndex={idx}
+                label={lane.toUpperCase()}
+                spans={list}
+                zoom={zoom}
+                current={current}
+                onSelect={onSelect}
+                selected={selected}
+                highlightActive={highlightActive}
+                heatOverlay={heatOverlay}
+                heatBins={heat[lane]}
+                binWidth={binWidth}
+                startOffset={minStart}
+              />
             ))}
             <GridOverlay end={endTime} zoom={zoom} />
-            {gpuSaturated && <div className="absolute top-2 right-2 text-xs bg-amber-500 text-slate-900 px-2 py-1 rounded">GPU saturated</div>}
-            {active.queued > 0 && <div className="absolute top-2 right-32 text-xs bg-indigo-400 text-slate-900 px-2 py-1 rounded">Queue forming</div>}
+            <SaturationBands saturation={saturation} zoom={zoom} />
+            {active.queued > 0 && <div className="absolute top-2 right-2 text-xs bg-indigo-400 text-slate-900 px-2 py-1 rounded">Queue forming</div>}
           </div>
           {!compact && <Details span={selected} />}
         </div>
@@ -131,13 +144,16 @@ export default function TimelineViewer({
   )
 }
 
-function LaneRow({ label, spans, zoom, current, onSelect, selected, laneIndex, highlightActive }: { label: string, spans: Span[], zoom: number, current: number, onSelect: (s: Span) => void, selected: Span | null, laneIndex: number, highlightActive: boolean }) {
+function LaneRow({ label, spans, zoom, current, onSelect, selected, laneIndex, highlightActive, heatOverlay, heatBins, binWidth, startOffset }: { label: string, spans: Span[], zoom: number, current: number, onSelect: (s: Span) => void, selected: Span | null, laneIndex: number, highlightActive: boolean, heatOverlay?: boolean, heatBins?: number[], binWidth?: number, startOffset?: number }) {
   const maxEnd = spans.reduce((m, s) => Math.max(m, s.endMs), 0)
   const width = Math.max(maxEnd * zoom + 200, 600)
   return (
     <div className="relative border-t border-slate-800" style={{ height: 40, backgroundColor: laneIndex % 2 === 0 ? 'rgba(15,23,42,0.4)' : 'rgba(15,23,42,0.2)' }}>
       <div className="sticky left-0 top-0 w-20 h-full flex items-center justify-center text-xs text-slate-300 bg-slate-900/90 backdrop-blur border-r border-slate-800 z-10">{label}</div>
       <div className="absolute left-20 right-0 top-0 h-full" style={{ width }}>
+        {heatOverlay && heatBins && binWidth ? (
+          <HeatOverlay bins={heatBins} binWidth={binWidth} startOffset={startOffset || 0} zoom={zoom} />
+        ) : null}
         {spans.map((s, i) => {
           const left = s.startMs * zoom
           const widthPx = Math.max(2, s.durMs * zoom)
@@ -210,4 +226,35 @@ function GridOverlay({ end, zoom }: { end: number, zoom: number }) {
   const width = Math.max(end * zoom + 200, 600)
   const bg = `repeating-linear-gradient(to right, rgba(255,255,255,0.03) 0, rgba(255,255,255,0.03) 1px, transparent 1px, transparent ${step * zoom}px)`
   return <div className="pointer-events-none absolute inset-0" style={{ width, backgroundImage: bg }} />
+}
+
+function HeatOverlay({ bins, binWidth, startOffset, zoom }: { bins: number[], binWidth: number, startOffset: number, zoom: number }) {
+  return (
+    <div className="absolute inset-0 pointer-events-none">
+      {bins.map((v, i) => {
+        const left = (startOffset + i * binWidth) * zoom
+        const width = binWidth * zoom
+        const opacity = Math.min(0.6, v * 0.8)
+        return <div key={i} className="absolute top-0 bottom-0 bg-white" style={{ left, width, opacity, backgroundColor: 'rgba(148,163,184,0.25)' }} />
+      })}
+    </div>
+  )
+}
+
+function SaturationBands({ saturation, zoom }: { saturation: { type: 'gpu' | 'queue'; start: number; end: number }[], zoom: number }) {
+  if (!saturation?.length) return null
+  return (
+    <div className="absolute left-20 right-0 top-0 h-6 pointer-events-none flex items-center gap-1 px-2">
+      {saturation.map((w, idx) => {
+        const left = w.start * zoom
+        const width = Math.max(2, (w.end - w.start) * zoom)
+        const color = w.type === 'gpu' ? 'rgba(52,211,153,0.25)' : 'rgba(129,140,248,0.25)'
+        const border = w.type === 'gpu' ? '1px solid rgba(52,211,153,0.6)' : '1px dashed rgba(129,140,248,0.6)'
+        return (
+          <div key={idx} className="absolute top-1 h-4 rounded-sm" style={{ left, width, backgroundColor: color, border }} title={w.type === 'gpu' ? 'GPU saturated' : 'Queue saturation'}>
+          </div>
+        )
+      })}
+    </div>
+  )
 }

@@ -6,7 +6,6 @@ import TimelineViewer from './components/TimelineViewer'
 import TimelineControls from './components/TimelineControls'
 import CompareView from './components/CompareView'
 import Tabs from './components/Tabs'
-import ResultCards from './components/ResultCards'
 import RequestDetails from './components/RequestDetails'
 import StageAggregates from './components/StageAggregates'
 import { defaultScenario } from './components/ScenarioPanel'
@@ -14,6 +13,7 @@ import { saveScenarioEntry, loadScenario, deleteScenario, loadIndex, loadLastSce
 import AboutAurix from './components/AboutAurix'
 import HeaderBar from './components/HeaderBar'
 import Footer from './components/Footer'
+import { computeDiagnosticsFromTrace } from './utils/diagnostics'
 
 const API = '' // proxied to 8080 via Vite config
 
@@ -36,6 +36,7 @@ export default function App() {
   const [timelineCurrent, setTimelineCurrent] = useState(0)
   const [timelineZoom, setTimelineZoom] = useState(0.4)
   const [highlightActive, setHighlightActive] = useState(true)
+  const [heatOverlay, setHeatOverlay] = useState(false)
   const [playing, setPlaying] = useState(false)
   const [speed, setSpeed] = useState(1)
   const [inspectorOpen, setInspectorOpen] = useState(() => {
@@ -45,6 +46,7 @@ export default function App() {
   const [counters, setCounters] = useState({ queued: 0, gpu: 0, transfer: 0, cpu: 0, total: 0 })
   const [timelineMeta, setTimelineMeta] = useState({ end: 0 })
   const [selectedSpan, setSelectedSpan] = useState(null)
+  const [diagnostics, setDiagnostics] = useState(null)
   const rafRef = useRef()
   const [collapsed, setCollapsed] = useState(false)
   const [panelWidth, setPanelWidth] = useState(() => {
@@ -63,6 +65,23 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('active_tab', activeTab)
   }, [activeTab])
+
+  useEffect(() => {
+    if (!run?.id) {
+      setDiagnostics(null)
+      return
+    }
+    let cancelled = false
+    fetch(`${API}/v1/runs/${run.id}/trace`)
+      .then((r) => r.json())
+      .then((json) => {
+        if (cancelled) return
+        const diag = computeDiagnosticsFromTrace(json)
+        setDiagnostics(diag)
+      })
+      .catch(() => !cancelled && setDiagnostics(null))
+    return () => { cancelled = true }
+  }, [run?.id])
 
   // panel resize handlers
   useEffect(() => {
@@ -255,8 +274,7 @@ export default function App() {
                     </div>
                   ) : (
                     <>
-                      <RunResults scenario={scenario} run={run} loading={loading} error={error} onOpenTimeline={openTimeline} />
-                      <ResultCards summary={run?.summary} runId={run?.id} trace={run?.trace} />
+                      <RunResults scenario={scenario} run={run} loading={loading} error={error} onOpenTimeline={openTimeline} diagnostics={diagnostics} />
                     </>
                   )}
                 </div>
@@ -279,12 +297,15 @@ export default function App() {
                         onZoom={setTimelineZoom}
                         highlight={highlightActive}
                         onHighlight={setHighlightActive}
+                        heatOverlay={heatOverlay}
+                        onHeatOverlay={setHeatOverlay}
                         counters={counters}
                         onToggleInspector={() => {
                           const next = !inspectorOpen
                           setInspectorOpen(next)
                           localStorage.setItem('inspector_open', next ? '1' : '0')
                         }}
+                        primaryBadge={diagnostics?.primary}
                       />
 
                       <div className={`grid gap-3 ${inspectorOpen ? 'lg:grid-cols-[1fr,280px]' : 'lg:grid-cols-[1fr]'} `} style={{ minHeight: timelineHeight ? 520 : 420 }}>
@@ -297,6 +318,7 @@ export default function App() {
                             onCurrentChange={(v) => { setTimelineCurrent(v) }}
                             zoom={timelineZoom}
                             highlightActive={highlightActive}
+                            heatOverlay={heatOverlay}
                             onActiveChange={setCounters}
                             onMeta={setTimelineMeta}
                             selected={selectedSpan}

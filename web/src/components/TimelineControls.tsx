@@ -12,8 +12,11 @@ type Props = {
   onZoom: (v: number) => void
   highlight: boolean
   onHighlight: (v: boolean) => void
+  heatOverlay: boolean
+  onHeatOverlay: (v: boolean) => void
   counters: { queued: number; gpu: number; transfer: number; cpu: number; total: number }
   onToggleInspector: () => void
+  primaryBadge?: string | null
 }
 
 export default function TimelineControls({
@@ -28,8 +31,11 @@ export default function TimelineControls({
   onZoom,
   highlight,
   onHighlight,
+  heatOverlay,
+  onHeatOverlay,
   counters,
   onToggleInspector,
+  primaryBadge,
 }: Props) {
   return (
     <div className="sticky top-0 z-10 bg-slate-900/90 backdrop-blur px-3 py-2 border-b border-slate-800 flex flex-wrap items-center gap-3 text-sm">
@@ -57,12 +63,19 @@ export default function TimelineControls({
         <input type="checkbox" checked={highlight} onChange={(e) => onHighlight(e.target.checked)} />
         Highlight active
       </label>
+      <label className="flex items-center gap-1 text-xs text-slate-300">
+        <input type="checkbox" checked={heatOverlay} onChange={(e) => onHeatOverlay(e.target.checked)} />
+        Heat overlay
+      </label>
       <div className="flex items-center gap-2 text-xs text-slate-300">
         <span>Queued {counters.queued}</span>
         <span>GPU {counters.gpu}</span>
         <span>Xfer {counters.transfer}</span>
         <span>CPU {counters.cpu}</span>
       </div>
+      {primaryBadge && (
+        <span className="ml-2 px-2 py-1 rounded-full text-xs border border-emerald-400/60 text-emerald-200 bg-emerald-500/10">{primaryBadge}</span>
+      )}
       <button className="ml-auto px-3 py-1 rounded border border-slate-700 text-slate-200" onClick={onToggleInspector}>
         Inspector
       </button>
