@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import Card from './ui/Card'
 import Button from './ui/Button'
 import { inputBase } from '../styles/formClasses'
+import HintPill from './HintPill'
 
 type SweepRun = { id: string; param: number; summary: any }
 
@@ -50,9 +51,16 @@ export default function Sweeps({ backendUrl, baseScenario, addRun, openRun, setA
 
   const chartDataRps = useMemo(() => toChart(rpsRuns), [rpsRuns])
   const chartDataCon = useMemo(() => toChart(conRuns), [conRuns])
+  const bestRps = useMemo(() => pickBest(rpsRuns), [rpsRuns])
+  const bestCon = useMemo(() => pickBest(conRuns), [conRuns])
 
   return (
     <div className="space-y-4">
+      <Card className="p-3 text-sm text-slate-200 space-y-2">
+        <div className="font-semibold">Sweeps help you see how latency and throughput change as load increases.</div>
+        <div className="text-slate-400">Use sweeps when you want to know when the system starts to saturate.</div>
+        <HintPill id="sweeps-hint" text="Tip: look for the knee where p99 bends upward or throughput stops scaling." />
+      </Card>
       <div className="flex gap-3 text-sm">
         <button className={`px-3 py-2 rounded ${tab === 'rps' ? 'bg-emerald-500/20 text-emerald-200' : 'bg-slate-800 text-slate-300'}`} onClick={() => setTab('rps')}>RPS Sweep</button>
         <button className={`px-3 py-2 rounded ${tab === 'con' ? 'bg-emerald-500/20 text-emerald-200' : 'bg-slate-800 text-slate-300'}`} onClick={() => setTab('con')}>Concurrency Sweep</button>
@@ -60,6 +68,7 @@ export default function Sweeps({ backendUrl, baseScenario, addRun, openRun, setA
 
       {tab === 'rps' && (
         <Card className="p-4 space-y-3">
+          <div className="text-slate-200 text-sm font-semibold">RPS Sweep</div>
           <div className="grid sm:grid-cols-4 gap-3">
             <Input label="Start" value={rpsCfg.start} onChange={(v) => setRpsCfg((c) => ({ ...c, start: v }))} />
             <Input label="End" value={rpsCfg.end} onChange={(v) => setRpsCfg((c) => ({ ...c, end: v }))} />
@@ -71,12 +80,14 @@ export default function Sweeps({ backendUrl, baseScenario, addRun, openRun, setA
             {running && <Button variant="ghost" onClick={() => setCancel(true)}>Cancel</Button>}
           </div>
           <Charts data={chartDataRps} knee={rpsKnee} label="RPS" />
+          <Interpretation knee={rpsKnee} runs={rpsRuns} kind="RPS" best={bestRps} openRun={openRun} setActiveTab={setActiveTab} />
           <RunTable runs={rpsRuns} onOpen={openRun} />
         </Card>
       )}
 
       {tab === 'con' && (
         <Card className="p-4 space-y-3">
+          <div className="text-slate-200 text-sm font-semibold">Concurrency Sweep</div>
           <div className="grid sm:grid-cols-4 gap-3">
             <Input label="Start" value={conCfg.start} onChange={(v) => setConCfg((c) => ({ ...c, start: v }))} />
             <Input label="End" value={conCfg.end} onChange={(v) => setConCfg((c) => ({ ...c, end: v }))} />
@@ -89,6 +100,7 @@ export default function Sweeps({ backendUrl, baseScenario, addRun, openRun, setA
             {conRec && <span className="text-sm text-emerald-200">Recommended concurrency: {conRec}</span>}
           </div>
           <Charts data={chartDataCon} knee={null} label="Concurrency" showThroughput={false} />
+          <Interpretation knee={null} runs={conRuns} kind="Concurrency" best={bestCon} openRun={openRun} setActiveTab={setActiveTab} />
           <RunTable runs={conRuns} onOpen={openRun} />
         </Card>
       )}
@@ -212,6 +224,19 @@ function findKnee(data: SweepRun[], xKey: string, pKey: string) {
   return null
 }
 
+function pickBest(runs: SweepRun[]) {
+  if (!runs.length) return null
+  const valid = runs.filter((r) => r.summary && (r.summary.p99_ms || r.summary.p99))
+  if (!valid.length) return null
+  const best = valid.reduce((best, cur) => {
+    const p = cur.summary.p99_ms || cur.summary.p99 || Infinity
+    if (!best) return cur
+    const bp = best.summary.p99_ms || best.summary.p99 || Infinity
+    return p < bp ? cur : best
+  }, null as any)
+  return best
+}
+
 function recommendConcurrency(runs: SweepRun[]) {
   if (!runs.length) return null
   const sorted = [...runs].sort((a, b) => a.param - b.param)
@@ -245,4 +270,21 @@ function saveRuns(key: string, val) {
 function fmt(v) {
   if (v === undefined || v === null || Number.isNaN(v)) return '—'
   return typeof v === 'number' ? v.toFixed(2) : v
+}
+
+function Interpretation({ knee, runs, kind, best, openRun, setActiveTab }) {
+  if (!runs.length) return null
+  const text = knee
+    ? `${kind} knee around ${knee.x}: p99 bends upward while throughput gain flattens.`
+    : `No clear knee in the scanned ${kind} range; p99 stayed relatively smooth.`
+  return (
+    <Card className="p-3 space-y-2">
+      <div className="text-slate-200 text-sm font-semibold">Interpretation</div>
+      <div className="text-sm text-slate-300">{text}</div>
+      <div className="flex gap-2">
+        {best && <Button variant="secondary" onClick={() => openRun(best.id)}>Open best run</Button>}
+        {knee && <Button variant="ghost" onClick={() => { openRun(best?.id || runs[0].id); setActiveTab('compare') }}>Compare knee run</Button>}
+      </div>
+    </Card>
+  )
 }
