@@ -43,6 +43,7 @@ export default function App() {
   const [timelineZoom, setTimelineZoom] = useState(0.4)
   const [highlightActive, setHighlightActive] = useState(true)
   const [heatOverlay, setHeatOverlay] = useState(false)
+  const [highlightLane, setHighlightLane] = useState(null)
   const [playing, setPlaying] = useState(false)
   const [speed, setSpeed] = useState(1)
   const [inspectorOpen, setInspectorOpen] = useState(() => {
@@ -322,6 +323,12 @@ export default function App() {
                   {run && <HintPill id="timeline-hint" text="Need the flow? Use playback to see queue, transfer, compute overlap." />}
                   {run && (
                     <>
+                      <FlowMap
+                        diagnostics={diagnostics}
+                        stageAggregates={run?.breakdown?.stage_aggregates}
+                        selected={highlightLane}
+                        onSelect={(lane) => setHighlightLane(lane)}
+                      />
                       <TimelineControls
                         playing={playing}
                         onTogglePlay={() => setPlaying((p) => !p)}
@@ -344,6 +351,7 @@ export default function App() {
                         }}
                         primaryBadge={diagnostics?.primary}
                         onExplain={() => setShowExplain(true)}
+                        highlightLane={highlightLane}
                       />
                       <DecisionSummary diagnostics={diagnostics} compact />
 
@@ -352,16 +360,17 @@ export default function App() {
                           <TimelineViewer
                             runId={run.id}
                             backendUrl={API}
-                            height={timelineHeight ? 520 : 420}
-                            current={timelineCurrent}
-                            onCurrentChange={(v) => { setTimelineCurrent(v) }}
-                            zoom={timelineZoom}
-                            highlightActive={highlightActive}
-                            heatOverlay={heatOverlay}
-                            onActiveChange={setCounters}
-                            onMeta={setTimelineMeta}
-                            selected={selectedSpan}
-                            onSelect={setSelectedSpan}
+                          height={timelineHeight ? 520 : 420}
+                          current={timelineCurrent}
+                          onCurrentChange={(v) => { setTimelineCurrent(v) }}
+                          zoom={timelineZoom}
+                          highlightActive={highlightActive}
+                          highlightLane={highlightLane}
+                          heatOverlay={heatOverlay}
+                          onActiveChange={setCounters}
+                          onMeta={setTimelineMeta}
+                          selected={selectedSpan}
+                          onSelect={setSelectedSpan}
                             compact={inspectorOpen === false}
                           />
                         </div>

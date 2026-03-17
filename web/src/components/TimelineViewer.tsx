@@ -12,6 +12,7 @@ type Props = {
   onCurrentChange: (v: number) => void
   zoom: number
   highlightActive: boolean
+  highlightLane?: string | null
   heatOverlay: boolean
   onActiveChange?: (counters: { queued: number; gpu: number; transfer: number; cpu: number; total: number }) => void
   onMeta?: (meta: { end: number }) => void
@@ -29,6 +30,7 @@ export default function TimelineViewer({
   onCurrentChange,
   zoom,
   highlightActive,
+  highlightLane,
   heatOverlay,
   onActiveChange,
   onMeta,
@@ -131,6 +133,7 @@ export default function TimelineViewer({
                 heatBins={heat[lane]}
                 binWidth={binWidth}
                 startOffset={minStart}
+                highlightLane={highlightLane}
               />
             ))}
             <GridOverlay end={endTime} zoom={zoom} />
@@ -144,7 +147,7 @@ export default function TimelineViewer({
   )
 }
 
-function LaneRow({ label, spans, zoom, current, onSelect, selected, laneIndex, highlightActive, heatOverlay, heatBins, binWidth, startOffset }: { label: string, spans: Span[], zoom: number, current: number, onSelect: (s: Span) => void, selected: Span | null, laneIndex: number, highlightActive: boolean, heatOverlay?: boolean, heatBins?: number[], binWidth?: number, startOffset?: number }) {
+function LaneRow({ label, spans, zoom, current, onSelect, selected, laneIndex, highlightActive, heatOverlay, heatBins, binWidth, startOffset, highlightLane }: { label: string, spans: Span[], zoom: number, current: number, onSelect: (s: Span) => void, selected: Span | null, laneIndex: number, highlightActive: boolean, heatOverlay?: boolean, heatBins?: number[], binWidth?: number, startOffset?: number, highlightLane?: string | null }) {
   const maxEnd = spans.reduce((m, s) => Math.max(m, s.endMs), 0)
   const width = Math.max(maxEnd * zoom + 200, 600)
   return (
@@ -161,7 +164,8 @@ function LaneRow({ label, spans, zoom, current, onSelect, selected, laneIndex, h
           const colors = timelineColors[s.lane as keyof typeof timelineColors] || timelineColors.cpu
           const isSelected = selected === s
           const baseClass = isSelected ? colors.selected : active && highlightActive ? colors.active : colors.base
-          const opacity = isSelected ? 1 : active ? 1 : highlightActive ? 0.25 : 0.55
+          const dimmed = highlightLane && s.lane !== highlightLane
+          const opacity = dimmed ? 0.18 : isSelected ? 1 : active ? 1 : highlightActive ? 0.25 : 0.55
           return (
             <div
               key={i}
