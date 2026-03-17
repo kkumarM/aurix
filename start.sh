@@ -24,8 +24,10 @@ already_running() {
 if already_running "$BACK_PID"; then
   echo "sim-api already running (pid $(cat "$BACK_PID"))."
 else
+  echo "Building sim-api..."
+  go build -o "$ROOT/bin/sim-api" ./cmd/sim-api
   echo "Starting sim-api..."
-  nohup go run ./cmd/sim-api >"$LOG_DIR/sim-api.log" 2>&1 &
+  nohup "$ROOT/bin/sim-api" >"$LOG_DIR/sim-api.log" 2>&1 &
   echo $! >"$BACK_PID"
   echo "sim-api started (pid $(cat "$BACK_PID")). Logs: $LOG_DIR/sim-api.log"
 fi
