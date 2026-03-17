@@ -130,6 +130,22 @@ export default function ScenarioPanel({
             title="WORKLOAD"
             open={openSections.workload}
             onToggle={() => setOpenSections((p) => ({ ...p, workload: !p.workload }))}
+            currentInfoId={infoOpen}
+            setCurrentInfoId={setInfoOpen}
+            infoId="workload"
+            infoContent={
+              <>
+                <div className="font-semibold text-slate-100">Workload basics</div>
+                <ul className="list-disc list-inside space-y-1 text-slate-200">
+                  <li><span className="font-semibold">RPS</span>: requests per second hitting the system; higher RPS raises load.</li>
+                  <li><span className="font-semibold">Duration</span>: how long to generate traffic for this simulation.</li>
+                  <li><span className="font-semibold">Batch size</span>: items processed per request; larger batches increase compute per request.</li>
+                  <li><span className="font-semibold">Concurrency</span>: max in-flight compute; higher can reduce queueing until GPU saturates.</li>
+                  <li><span className="font-semibold">Jitter</span>: arrival randomness; higher jitter means burstier traffic and longer queues.</li>
+                </ul>
+                <div className="text-slate-300">Example: RPS 4, duration 10s = ~40 requests; with jitter high, expect uneven bursts and possible queueing.</div>
+              </>
+            }
           >
             <div className="grid grid-cols-2 gap-2">
               <Field label="Scenario Name" help="Label for this experiment."><input className={inputBase} value={scenario.name} onChange={(e) => updateScenario(['name'], e.target.value)} /></Field>
@@ -146,6 +162,8 @@ export default function ScenarioPanel({
             title="TARGET GPU"
             open={openSections.target}
             onToggle={() => setOpenSections((p) => ({ ...p, target: !p.target }))}
+            currentInfoId={infoOpen}
+            setCurrentInfoId={setInfoOpen}
           >
             <div className="space-y-2.5">
               <Field label="Profile">
@@ -186,6 +204,32 @@ export default function ScenarioPanel({
             title="PIPELINE"
             open={openSections.pipeline}
             onToggle={() => setOpenSections((p) => ({ ...p, pipeline: !p.pipeline }))}
+            currentInfoId={infoOpen}
+            setCurrentInfoId={setInfoOpen}
+            infoId="pipeline"
+            infoContent={
+              <>
+                <div className="font-semibold text-slate-100">Pipeline stages & timing</div>
+                <ul className="list-disc list-inside space-y-1">
+                  <li><span className="font-semibold text-slate-200">Preprocess / Postprocess</span>: CPU work, fixed_ms durations.</li>
+                  <li><span className="font-semibold text-slate-200">H2D (Host→Device)</span>: time = bytes ÷ H2D bandwidth.</li>
+                  <li><span className="font-semibold text-slate-200">Compute (GPU)</span>: tokens × ms_per_token (LLM-style) or fixed_ms.</li>
+                  <li><span className="font-semibold text-slate-200">D2H (Device→Host)</span>: time = bytes ÷ D2H bandwidth.</li>
+                </ul>
+                <div className="text-slate-300">
+                  Example: 8 MB input on 32 GB/s ≈ 0.25 ms; compute 128 tokens @ 0.2 ms/token ≈ 25.6 ms; 2 MB output ≈ 0.06 ms.
+                </div>
+                <div className="flex justify-end">
+                  <button
+                    className="text-emerald-300 text-[11px] px-2 py-1 rounded border border-emerald-400/40 hover:bg-emerald-400/10"
+                    onClick={(e) => { e.preventDefault(); setInfoOpen(null) }}
+                  >
+                    Close
+                  </button>
+                </div>
+              </>
+            }
+            infoAlign="right"
           >
             <PipelineEditor pipeline={scenario.pipeline} setPipeline={setPipeline} />
           </Accordion>
@@ -212,13 +256,33 @@ export default function ScenarioPanel({
   )
 }
 
-function Accordion({ title, open, onToggle, children }) {
+function Accordion({ title, open, onToggle, children, currentInfoId, setCurrentInfoId, infoId, infoContent, infoAlign = 'right' }) {
   return (
     <div className="border border-slate-800 rounded-lg overflow-visible shadow-sm">
-      <button className="w-full flex items-center justify-between px-3 py-2.5 bg-slate-900/80 text-slate-300 text-[11px] tracking-[0.14em] uppercase border-b border-slate-800/80" onClick={onToggle}>
-        <span className="font-semibold">{title}</span>
-        <span className="text-slate-500">{open ? '−' : '+'}</span>
-      </button>
+      <div className="w-full flex items-center justify-between px-3 py-2.5 bg-slate-900/80 text-slate-300 text-[11px] tracking-[0.14em] uppercase border-b border-slate-800/80 relative">
+        <button className="flex-1 text-left font-semibold" onClick={onToggle}>{title}</button>
+        {infoContent && infoId && currentInfoId !== undefined && setCurrentInfoId && (
+          <span className="relative ml-2">
+            <button
+              type="button"
+              className="text-emerald-200 font-semibold text-xs px-1.5 py-0.5 border border-emerald-400/60 rounded hover:text-emerald-100 bg-emerald-500/10"
+              title="More info"
+              onClick={(e) => {
+                e.preventDefault()
+                setCurrentInfoId(currentInfoId === infoId ? null : infoId)
+              }}
+            >
+              ?
+            </button>
+            {currentInfoId === infoId && (
+              <div className={`absolute ${infoAlign === 'left' ? 'left-0' : 'right-0'} top-full mt-2 w-64 max-w-[90vw] z-50 bg-slate-900 border border-slate-700 rounded-lg p-3 shadow-xl text-xs text-slate-200 space-y-2`}>
+                {infoContent}
+              </div>
+            )}
+          </span>
+        )}
+        <button className="text-slate-500 ml-2" onClick={onToggle}>{open ? '−' : '+'}</button>
+      </div>
       {open && <div className="p-3 space-y-2.5">{children}</div>}
     </div>
   )
