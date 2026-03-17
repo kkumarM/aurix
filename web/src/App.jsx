@@ -19,6 +19,7 @@ import StartHere from './components/StartHere'
 import QuickQuestions from './components/QuickQuestions'
 import HintPill from './components/HintPill'
 import DecisionSummary from './components/DecisionSummary'
+import ExplainPanel from './components/ExplainPanel'
 
 const API = '' // proxied to 8080 via Vite config
 
