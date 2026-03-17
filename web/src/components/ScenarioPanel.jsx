@@ -48,6 +48,7 @@ export default function ScenarioPanel({
   const [wizardOpen, setWizardOpen] = useState(false)
   const [openSections, setOpenSections] = useState({ workload: true, target: true, pipeline: true })
   const [errors, setErrors] = useState('')
+  const [infoOpen, setInfoOpen] = useState(null)
 
   const updateScenario = (path, value) => {
     setScenario((prev) => {
@@ -158,7 +159,16 @@ export default function ScenarioPanel({
               </Field>
               <div className="grid grid-cols-2 gap-2">
                 {['tflops', 'mem_gbps', 'h2d_gbps', 'd2h_gbps', 'ms_per_token'].map((k) => (
-                  <Field key={k} label={labelFor(k)} tooltip={tooltipFor(k)}>
+                  <Field
+                    key={k}
+                    label={labelFor(k)}
+                    tooltip="Click for explanation"
+                    infoTitle={labelFor(k)}
+                    infoBody={infoBodyFor(k)}
+                    infoId={`gpu-${k}`}
+                    currentInfoId={infoOpen}
+                    setCurrentInfoId={setInfoOpen}
+                  >
                     <input
                       className={inputBase}
                       type="number"
@@ -204,7 +214,7 @@ export default function ScenarioPanel({
 
 function Accordion({ title, open, onToggle, children }) {
   return (
-    <div className="border border-slate-800 rounded-lg overflow-hidden shadow-sm">
+    <div className="border border-slate-800 rounded-lg overflow-visible shadow-sm">
       <button className="w-full flex items-center justify-between px-3 py-2.5 bg-slate-900/80 text-slate-300 text-[11px] tracking-[0.14em] uppercase border-b border-slate-800/80" onClick={onToggle}>
         <span className="font-semibold">{title}</span>
         <span className="text-slate-500">{open ? '−' : '+'}</span>
@@ -227,12 +237,29 @@ function labelFor(key) {
 
 function tooltipFor(key) {
   switch (key) {
-    case 'tflops': return 'Peak FP32 throughput'
-    case 'mem_gbps': return 'Device memory bandwidth'
-    case 'h2d_gbps': return 'Host-to-device bandwidth'
-    case 'd2h_gbps': return 'Device-to-host bandwidth'
-    case 'ms_per_token': return 'Heuristic cost per token'
+    case 'tflops': return 'What does TFLOPS mean?'
+    case 'mem_gbps': return 'Memory bandwidth in GB/s'
+    case 'h2d_gbps': return 'Host to device bandwidth'
+    case 'd2h_gbps': return 'Device to host bandwidth'
+    case 'ms_per_token': return 'Cost per token'
     default: return ''
+  }
+}
+
+function infoBodyFor(key) {
+  switch (key) {
+    case 'tflops':
+      return 'TFLOPS ≈ trillions of floating-point ops per second (peak). Higher means faster math.\nExample: 60 TFLOPS can theoretically do ~60e12 ops/s; a 10 ms compute block could do ~0.6e12 ops.';
+    case 'mem_gbps':
+      return 'Memory bandwidth is how fast the GPU moves data within its memory. Affects stages dominated by memory reads/writes.\nExample: 600 GB/s means ~600 gigabytes can be streamed each second.';
+    case 'h2d_gbps':
+      return 'Host → Device bandwidth for uploads (PCIe). Larger inputs take longer on this link.\nExample: 8 MB input on 32 GB/s link ≈ 8MB / (32 GB/s) ≈ 0.25 ms.';
+    case 'd2h_gbps':
+      return 'Device → Host bandwidth for downloads. Impacts results/outputs you copy back.\nExample: 2 MB output on 32 GB/s ≈ 0.06 ms.';
+    case 'ms_per_token':
+      return 'Heuristic cost per generated token for LLM-like workloads. tokens × ms/token = compute stage time.\nExample: 128 tokens × 0.2 ms/token = 25.6 ms compute.';
+    default:
+      return ''
   }
 }
 
