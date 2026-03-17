@@ -18,6 +18,7 @@ import Sweeps from './components/Sweeps.tsx'
 import StartHere from './components/StartHere'
 import QuickQuestions from './components/QuickQuestions'
 import HintPill from './components/HintPill'
+import DecisionSummary from './components/DecisionSummary'
 
 const API = '' // proxied to 8080 via Vite config
 
@@ -51,6 +52,7 @@ export default function App() {
   const [timelineMeta, setTimelineMeta] = useState({ end: 0 })
   const [selectedSpan, setSelectedSpan] = useState(null)
   const [diagnostics, setDiagnostics] = useState(null)
+  const [showExplain, setShowExplain] = useState(false)
   const rafRef = useRef()
   const [collapsed, setCollapsed] = useState(false)
   const [panelWidth, setPanelWidth] = useState(() => {
@@ -281,6 +283,7 @@ export default function App() {
                     />
                   ) : (
                     <>
+                      <DecisionSummary diagnostics={diagnostics} onExplain={() => setShowExplain(true)} />
                       <RunResults
                         scenario={scenario}
                         run={run}
@@ -293,6 +296,13 @@ export default function App() {
                         setRun={setRun}
                         setActiveTab={setActiveTab}
                       />
+                      {showExplain && (
+                        <ExplainPanel
+                          summary={run?.summary}
+                          diagnostics={diagnostics}
+                          onClose={() => setShowExplain(false)}
+                        />
+                      )}
                       <QuickQuestions
                         onBottleneck={() => setActiveTab('results')}
                         onSla={() => setActiveTab('results')}
@@ -332,7 +342,9 @@ export default function App() {
                           localStorage.setItem('inspector_open', next ? '1' : '0')
                         }}
                         primaryBadge={diagnostics?.primary}
+                        onExplain={() => setShowExplain(true)}
                       />
+                      <DecisionSummary diagnostics={diagnostics} compact />
 
                       <div className={`grid gap-3 ${inspectorOpen ? 'lg:grid-cols-[1fr,280px]' : 'lg:grid-cols-[1fr]'} `} style={{ minHeight: timelineHeight ? 520 : 420 }}>
                         <div className="min-h-[420px]">
