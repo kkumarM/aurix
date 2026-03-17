@@ -131,13 +131,13 @@ export default function ScenarioPanel({
             onToggle={() => setOpenSections((p) => ({ ...p, workload: !p.workload }))}
           >
             <div className="grid grid-cols-2 gap-2">
-              <Field label="Scenario Name"><input className={inputBase} value={scenario.name} onChange={(e) => updateScenario(['name'], e.target.value)} /></Field>
-              <Field label="Workload Name"><input className={inputBase} value={scenario.workload.name} onChange={(e) => updateScenario(['workload', 'name'], e.target.value)} /></Field>
-              <Field label="RPS" suffix="rps"><input type="number" className={inputBase} value={scenario.workload.rps} onChange={(e) => updateScenario(['workload', 'rps'], parseFloat(e.target.value))} /></Field>
-              <Field label="Duration" suffix="s"><input type="number" className={inputBase} value={scenario.workload.duration_s} onChange={(e) => updateScenario(['workload', 'duration_s'], parseFloat(e.target.value))} /></Field>
-              <Field label="Batch Size"><input type="number" className={inputBase} value={scenario.workload.batch_size} onChange={(e) => updateScenario(['workload', 'batch_size'], parseInt(e.target.value, 10))} /></Field>
-              <Field label="Concurrency" tooltip="Max in-flight compute slots"><input type="number" className={inputBase} value={scenario.target.concurrency} onChange={(e) => updateScenario(['target', 'concurrency'], parseInt(e.target.value, 10))} /></Field>
-              <Field label="Jitter" suffix="%"><input type="number" className={inputBase} value={scenario.workload.jitter_pct} onChange={(e) => updateScenario(['workload', 'jitter_pct'], parseFloat(e.target.value))} /></Field>
+              <Field label="Scenario Name" help="Label for this experiment."><input className={inputBase} value={scenario.name} onChange={(e) => updateScenario(['name'], e.target.value)} /></Field>
+              <Field label="Workload Name" help="Short name of the app/workload you’re modeling."><input className={inputBase} value={scenario.workload.name} onChange={(e) => updateScenario(['workload', 'name'], e.target.value)} /></Field>
+              <Field label="RPS" suffix="rps" help="Requests per second arriving to the system. Drives load."><input type="number" className={inputBase} value={scenario.workload.rps} onChange={(e) => updateScenario(['workload', 'rps'], parseFloat(e.target.value))} /></Field>
+              <Field label="Duration" suffix="s" help="How long to generate traffic for this run."><input type="number" className={inputBase} value={scenario.workload.duration_s} onChange={(e) => updateScenario(['workload', 'duration_s'], parseFloat(e.target.value))} /></Field>
+              <Field label="Batch Size" help="Items processed per request. Affects compute work."><input type="number" className={inputBase} value={scenario.workload.batch_size} onChange={(e) => updateScenario(['workload', 'batch_size'], parseInt(e.target.value, 10))} /></Field>
+              <Field label="Concurrency" tooltip="Max in-flight compute slots" help="How many requests can compute on GPU at once."><input type="number" className={inputBase} value={scenario.target.concurrency} onChange={(e) => updateScenario(['target', 'concurrency'], parseInt(e.target.value, 10))} /></Field>
+              <Field label="Jitter" suffix="%" help="Arrival randomness. Higher = burstier traffic and more queueing."><input type="number" className={inputBase} value={scenario.workload.jitter_pct} onChange={(e) => updateScenario(['workload', 'jitter_pct'], parseFloat(e.target.value))} /></Field>
             </div>
           </Accordion>
 
