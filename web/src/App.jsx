@@ -20,6 +20,7 @@ import QuickQuestions from './components/QuickQuestions'
 import HintPill from './components/HintPill'
 import DecisionSummary from './components/DecisionSummary'
 import ExplainPanel from './components/ExplainPanel'
+import StoryMode from './components/StoryMode'
 
 const API = '' // proxied to 8080 via Vite config
 
@@ -44,6 +45,10 @@ export default function App() {
   const [highlightActive, setHighlightActive] = useState(true)
   const [heatOverlay, setHeatOverlay] = useState(false)
   const [highlightLane, setHighlightLane] = useState(null)
+  const [storyOpen, setStoryOpen] = useState(() => {
+    const v = typeof localStorage !== 'undefined' ? localStorage.getItem('storymode') : null
+    return v !== 'dismissed'
+  })
   const [playing, setPlaying] = useState(false)
   const [speed, setSpeed] = useState(1)
   const [inspectorOpen, setInspectorOpen] = useState(() => {
@@ -351,17 +356,26 @@ export default function App() {
                         }}
                         primaryBadge={diagnostics?.primary}
                         onExplain={() => setShowExplain(true)}
+                        onStory={() => setStoryOpen(true)}
                         highlightLane={highlightLane}
                       />
                       <DecisionSummary diagnostics={diagnostics} compact />
 
                       <div className={`grid gap-3 ${inspectorOpen ? 'lg:grid-cols-[1fr,280px]' : 'lg:grid-cols-[1fr]'} `} style={{ minHeight: timelineHeight ? 520 : 420 }}>
                         <div className="min-h-[420px]">
+                          {storyOpen && (
+                            <div className="absolute z-40">
+                              <StoryMode
+                                onSelectLane={(lane) => setHighlightLane(lane)}
+                                onClose={() => setStoryOpen(false)}
+                              />
+                            </div>
+                          )}
                           <TimelineViewer
                             runId={run.id}
                             backendUrl={API}
-                          height={timelineHeight ? 520 : 420}
-                          current={timelineCurrent}
+                            height={timelineHeight ? 520 : 420}
+                            current={timelineCurrent}
                           onCurrentChange={(v) => { setTimelineCurrent(v) }}
                           zoom={timelineZoom}
                           highlightActive={highlightActive}

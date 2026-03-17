@@ -18,6 +18,7 @@ type Props = {
   onToggleInspector: () => void
   primaryBadge?: string | null
   onExplain?: () => void
+  onStory?: () => void
 }
 
 export default function TimelineControls({
@@ -38,6 +39,7 @@ export default function TimelineControls({
   onToggleInspector,
   primaryBadge,
   onExplain,
+  onStory,
 }: Props) {
   return (
     <div className="sticky top-0 z-10 bg-slate-900/90 backdrop-blur px-3 py-2 border-b border-slate-800 flex flex-wrap items-center gap-3 text-sm">
@@ -79,6 +81,7 @@ export default function TimelineControls({
         <span className="ml-2 px-2 py-1 rounded-full text-xs border border-emerald-400/60 text-emerald-200 bg-emerald-500/10">{primaryBadge}</span>
       )}
       {onExplain && <button className="text-emerald-300 text-xs" onClick={onExplain}>Explain</button>}
+      {onStory && <button className="text-sky-300 text-xs" onClick={onStory}>Story Mode</button>}
       <button className="ml-auto px-3 py-1 rounded border border-slate-700 text-slate-200" onClick={onToggleInspector}>
         Inspector
       </button>
