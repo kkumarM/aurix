@@ -2,7 +2,7 @@ import React from 'react'
 
 export default function AboutAurix() {
   return (
-    <div className="max-w-3xl mx-auto space-y-6 text-slate-200">
+    <div className="max-w-4xl mx-auto space-y-6 text-slate-200">
       <header className="flex items-center gap-3">
         <AurixLogo />
         <div>
@@ -54,6 +54,8 @@ export default function AboutAurix() {
           Use Aurix for rapid scenario exploration, capacity planning, and communicating system-level behavior. Use Nsight Systems for detailed profiling and low-level validation; you can import Nsight traces into Aurix for calibration and comparison.
         </p>
       </div>
+
+      <Capabilities />
     </div>
   )
 }
@@ -71,6 +73,45 @@ function Section({ title, bullets, tone = 'neutral' }: { title: string; bullets:
           </li>
         ))}
       </ul>
+    </div>
+  )
+}
+
+function Capabilities() {
+  const capabilities = [
+    { name: 'Scenario Builder', answers: 'Describe workload intent and target GPU', for: 'Perf & infra engineers', level: 'Beginner' },
+    { name: 'Timeline / Playback', answers: 'See queueing, compute, transfer, overlap', for: 'Perf & SRE', level: 'Beginner' },
+    { name: 'Compare Runs', answers: 'Understand how changes affect behavior', for: 'Perf analysts', level: 'Beginner' },
+    { name: 'Real Trace Upload', answers: 'Bring in Nsight Systems traces for comparison', for: 'GPU owners', level: 'Advanced' },
+    { name: 'Sweeps', answers: 'Explore how RPS/concurrency changes p99 & throughput', for: 'Capacity planners', level: 'Advanced' },
+    { name: 'Docs / Help', answers: 'Learn how to interpret results', for: 'New users', level: 'Beginner' },
+  ]
+  return (
+    <div className="space-y-3">
+      <h3 className="text-lg font-semibold">Capabilities</h3>
+      <div className="bg-slate-900/70 border border-slate-800 rounded-lg p-3 overflow-x-auto">
+        <table className="min-w-full text-sm text-slate-200">
+          <thead className="text-slate-400 text-xs">
+            <tr>
+              <th className="text-left py-1">Capability</th>
+              <th className="text-left py-1">Answers what?</th>
+              <th className="text-left py-1">Best for</th>
+              <th className="text-left py-1">Level</th>
+            </tr>
+          </thead>
+          <tbody>
+            {capabilities.map((c) => (
+              <tr key={c.name} className="border-t border-slate-800">
+                <td className="py-1">{c.name}</td>
+                <td className="py-1 text-slate-300">{c.answers}</td>
+                <td className="py-1 text-slate-400">{c.for}</td>
+                <td className="py-1 text-slate-200">{c.level}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="text-xs text-slate-500">Sweeps feature is available in the UI; README feature list should be updated. {/* TODO README update */}</div>
     </div>
   )
 }

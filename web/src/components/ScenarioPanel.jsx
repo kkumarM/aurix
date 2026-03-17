@@ -3,6 +3,7 @@ import Field from './forms/Field'
 import { inputBase, selectBase } from '../styles/formClasses'
 import PipelineEditor from './PipelineEditor'
 import ScenarioWizard from './wizard/ScenarioWizard.tsx'
+import CalibrationModal from './CalibrationModal.jsx'
 
 export const defaultScenario = {
   name: 'Demo Scenario',
@@ -46,6 +47,7 @@ export default function ScenarioPanel({
   setCollapsed,
 }) {
   const [wizardOpen, setWizardOpen] = useState(false)
+  const [calibOpen, setCalibOpen] = useState(false)
   const [openSections, setOpenSections] = useState({ workload: true, target: true, pipeline: true })
   const [errors, setErrors] = useState('')
   const [infoOpen, setInfoOpen] = useState(null)
@@ -105,17 +107,24 @@ export default function ScenarioPanel({
           {!collapsed && <div className="text-lg font-semibold">Scenario</div>}
         </div>
         {!collapsed && (
-          <div className="flex gap-2 text-xs">
-            <button className="px-3 py-1 rounded bg-slate-800 border border-slate-700" onClick={() => onReset?.()}>Reset</button>
-            <button className="px-3 py-1 rounded bg-slate-800 border border-slate-700" onClick={() => onSave?.(scenario)}>Save</button>
-            <select className={`${selectBase} h-9 w-32`} onChange={(e) => onLoad?.(e.target.value)} value="">
-              <option value="">Load...</option>
-              {savedList.map((s) => (
-                <option key={s.id} value={s.id}>{s.name}</option>
-              ))}
-            </select>
-            <button className="px-3 py-1 rounded bg-slate-800 border border-slate-700" onClick={() => onDelete?.(prompt('Delete which id?') || '')}>Delete</button>
-            <button className="px-3 py-1 rounded bg-slate-800 border border-slate-700" onClick={() => setWizardOpen(true)}>Wizard</button>
+          <div className="grid sm:grid-cols-3 gap-2 text-xs items-center w-full max-w-3xl">
+            <div className="flex gap-2">
+              <button className="px-3 py-1 rounded bg-slate-800 border border-slate-700" onClick={() => onReset?.()}>Reset</button>
+              <button className="px-3 py-1 rounded bg-slate-800 border border-slate-700" onClick={() => onSave?.(scenario)}>Save</button>
+            </div>
+            <div className="flex gap-2">
+              <select className={`${selectBase} h-9 w-full`} onChange={(e) => onLoad?.(e.target.value)} value="">
+                <option value="">Load...</option>
+                {savedList.map((s) => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </select>
+              <button className="px-3 py-1 rounded bg-slate-800 border border-slate-700" onClick={() => onDelete?.(prompt('Delete which id?') || '')}>Delete</button>
+            </div>
+            <div className="flex gap-2">
+              <button className="px-3 py-1 rounded bg-slate-800 border border-slate-700" onClick={() => setWizardOpen(true)}>Wizard</button>
+              <button className="px-3 py-1 rounded bg-slate-800 border border-slate-700" onClick={() => setCalibOpen(true)}>Calibrate LLM</button>
+            </div>
           </div>
         )}
       </div>
@@ -248,6 +257,14 @@ export default function ScenarioPanel({
               scenario={scenario}
               setScenario={setScenario}
               onRun={onRun}
+            />
+          )}
+          {calibOpen && (
+            <CalibrationModal
+              open={calibOpen}
+              onClose={() => setCalibOpen(false)}
+              scenario={scenario}
+              setScenario={setScenario}
             />
           )}
         </>

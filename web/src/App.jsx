@@ -15,6 +15,9 @@ import HeaderBar from './components/HeaderBar'
 import Footer from './components/Footer'
 import { computeDiagnosticsFromTrace } from './utils/diagnostics'
 import Sweeps from './components/Sweeps.tsx'
+import StartHere from './components/StartHere'
+import QuickQuestions from './components/QuickQuestions'
+import HintPill from './components/HintPill'
 
 const API = '' // proxied to 8080 via Vite config
 
@@ -60,6 +63,8 @@ export default function App() {
   const runB = runs.find((r) => r.id === compareIds[1])
 
   const addRun = (newRun) => setRuns((prev) => [...prev.slice(-9), newRun])
+  const goCompare = () => setActiveTab('compare')
+  const goSweeps = () => setActiveTab('sweeps')
 
   useEffect(() => {
     localStorage.setItem('sim_runs', JSON.stringify(runs.slice(-10)))
@@ -243,6 +248,7 @@ export default function App() {
               collapsed={collapsed}
               setCollapsed={setCollapsed}
             />
+            {!collapsed && <div className="mt-2"><HintPill id="scenario-hint" text="Not sure what to enter? Try the Wizard or Calibrate LLM." /></div>}
             <div
               className="absolute top-0 right-0 h-full w-2 cursor-col-resize"
               onMouseDown={startResize}
@@ -264,25 +270,15 @@ export default function App() {
             <div className="p-4 space-y-4">
               {activeTab === 'results' && (
                 <div className="space-y-3">
+                  <HintPill id="results-hint" text="Want to compare configurations? Open Compare tab to diff two runs." />
                   {(!run && !loading) ? (
-                    <div className="flex items-center justify-center min-h-[340px]">
-                      <div className="text-center space-y-4 max-w-md">
-                        <div className="flex items-center justify-center">
-                          <div className="h-14 w-14 rounded-full bg-emerald-500/15 border border-emerald-500/40 flex items-center justify-center">
-                            <svg width="32" height="32" viewBox="0 0 64 64" fill="none" aria-hidden="true">
-                              <path d="M8 46h20M14 34h26M22 22h26" stroke="#34D399" strokeWidth="3" strokeLinecap="round" />
-                              <path d="M12 50c0-12 7-22 18-26s22-1 30 8" stroke="#34D399" strokeWidth="2" strokeLinecap="round" strokeDasharray="5 4" />
-                            </svg>
-                          </div>
-                        </div>
-                        <div className="text-xl font-semibold text-slate-100">No results yet</div>
-                        <div className="text-sm text-slate-400 leading-relaxed">Define a scenario and run a simulation to visualize GPU workload behavior.</div>
-                        <div className="flex items-center justify-center gap-3">
-                          <button className="px-5 py-2.5 rounded-md bg-emerald-500 text-slate-950 font-semibold shadow-sm" onClick={() => handleRun(scenario)}>Run Simulation</button>
-                          <div className="text-xs text-slate-500">Start with the default scenario</div>
-                        </div>
-                      </div>
-                    </div>
+                    <StartHere
+                      onBuild={() => setCollapsed(false)}
+                      onRun={() => handleRun(scenario)}
+                      onTimeline={() => setActiveTab('timeline')}
+                      onCompare={() => runs.length ? goCompare() : goSweeps()}
+                      onUploadTrace={() => setActiveTab('docs')}
+                    />
                   ) : (
                     <>
                       <RunResults
@@ -297,6 +293,13 @@ export default function App() {
                         setRun={setRun}
                         setActiveTab={setActiveTab}
                       />
+                      <QuickQuestions
+                        onBottleneck={() => setActiveTab('results')}
+                        onSla={() => setActiveTab('results')}
+                        onConcurrency={() => (runs.length ? goSweeps() : setActiveTab('docs'))}
+                        onGpuCount={() => setActiveTab('docs')}
+                        onCompare={() => goCompare()}
+                      />
                     </>
                   )}
                 </div>
@@ -305,6 +308,7 @@ export default function App() {
               {activeTab === 'timeline' && (
                 <div className="space-y-3">
                   {!run && <div className="text-slate-400 text-sm">Run a scenario to see the timeline.</div>}
+                  {run && <HintPill id="timeline-hint" text="Need the flow? Use playback to see queue, transfer, compute overlap." />}
                   {run && (
                     <>
                       <TimelineControls
