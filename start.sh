@@ -47,4 +47,4 @@ else
   echo "web dev server started (pid $(cat "$WEB_PID")). Logs: $LOG_DIR/web-dev.log"
 fi
 
-echo "Aurix dev environment is up. Backend :8080, Web :5173."
+echo "GPARX dev environment is up. Backend :8080, Web :5173."

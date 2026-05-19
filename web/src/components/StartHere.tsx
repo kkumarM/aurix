@@ -7,9 +7,9 @@ export default function StartHere({ onBuild, onRun, onTimeline, onCompare, onUpl
   return (
     <div className="max-w-4xl mx-auto space-y-4">
       <Card className="p-5 space-y-4 text-center">
-        <div className="text-2xl font-semibold text-slate-100">Start with Aurix</div>
+        <div className="text-2xl font-semibold text-slate-100">Start with GPARX</div>
         <div className="text-slate-300 text-sm">
-          Aurix helps you model GPU workload behavior, inspect timelines, compare configurations, and reason about bottlenecks before or after running on real hardware.
+          GPARX helps you model GPU workload behavior, inspect timelines, compare configurations, and reason about bottlenecks before or after running on real hardware.
         </div>
         <div className="grid sm:grid-cols-2 gap-3">
           <Card className="p-3 space-y-2">

@@ -1,5 +1,5 @@
 <p align="center">
-  <svg width="140" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Aurix logo">
+  <svg width="140" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="GPARX logo">
     <path d="M60 4 L8 116 H112 Z" fill="none" stroke="#34D399" stroke-width="8" stroke-linejoin="round"/>
     <path d="M25 82 H95" stroke="#34D399" stroke-width="6" stroke-linecap="round"/>
     <path d="M32 66 H88" stroke="#34D399" stroke-width="5" stroke-linecap="round"/>
@@ -8,7 +8,7 @@
   </svg>
 </p>
 
-<h1 align="center">AURIX — GPU Workload Performance Explorer</h1>
+<h1 align="center">GPARX — GPU Performance Analysis &amp; Reasoning eXplorer</h1>
 
 End-to-end simulator with Go backend and React/Tailwind web UI. Models request pipelines (preprocess → h2d → compute → d2h → postprocess), queueing, GPU bandwidth/compute constraints, and emits Chrome trace JSON for visualization. Supports overlaying real Nsight Systems traces (sqlite) for comparison.
 

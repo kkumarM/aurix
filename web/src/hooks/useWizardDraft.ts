@@ -40,7 +40,9 @@ const defaultDraft: WizardDraft = {
 
 export function useWizardDraft() {
   const [draft, setDraft] = useState<WizardDraft>(() => {
-    const stored = typeof localStorage !== 'undefined' ? localStorage.getItem('aurix_wizard') : null
+    const stored = typeof localStorage !== 'undefined'
+      ? (localStorage.getItem('gparx_wizard') ?? localStorage.getItem('aurix_wizard'))
+      : null
     if (stored) {
       try { return { ...defaultDraft, ...JSON.parse(stored) } } catch { /* ignore */ }
     }
@@ -48,7 +50,7 @@ export function useWizardDraft() {
   })
 
   useEffect(() => {
-    localStorage.setItem('aurix_wizard', JSON.stringify(draft))
+    localStorage.setItem('gparx_wizard', JSON.stringify(draft))
   }, [draft])
 
   const reset = () => setDraft(defaultDraft)

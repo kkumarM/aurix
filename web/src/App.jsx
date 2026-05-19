@@ -10,7 +10,7 @@ import RequestDetails from './components/RequestDetails'
 import StageAggregates from './components/StageAggregates'
 import { defaultScenario } from './components/ScenarioPanel'
 import { saveScenarioEntry, loadScenario, deleteScenario, loadIndex, loadLastScenario } from './utils/scenarioStore'
-import AboutAurix from './components/AboutAurix'
+import AboutGparx from './components/AboutGparx'
 import HeaderBar from './components/HeaderBar'
 import Footer from './components/Footer'
 import { computeDiagnosticsFromTrace } from './utils/diagnostics'
@@ -421,7 +421,7 @@ export default function App() {
 
               {activeTab === 'docs' && (
                 <div className="p-2">
-                  <AboutAurix />
+                  <AboutGparx />
                 </div>
               )}
 

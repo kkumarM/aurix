@@ -1,6 +1,6 @@
-# Contributing to Aurix
+# Contributing to GPARX
 
-Thanks for your interest in improving Aurix! This guide keeps contributions smooth and consistent.
+Thanks for your interest in improving GPARX! This guide keeps contributions smooth and consistent.
 
 ## Quick start
 - Fork or create a feature branch from `main`.

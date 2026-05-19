@@ -131,9 +131,9 @@ function exportReport(run, params) {
     expected_utilization_pct: util,
     risks,
   }
-  download(JSON.stringify(report, null, 2), 'application/json', 'aurix-capacity.json')
+  download(JSON.stringify(report, null, 2), 'application/json', 'gparx-capacity.json')
   const md = [
-    '# Aurix Capacity Report',
+    '# GPARX Capacity Report',
     `Target RPS: ${params.rps}`,
     `SLA p99 (ms): ${params.sla}`,
     `Per-GPU throughput (obs): ${fmt(perGpu)}`,
@@ -141,7 +141,7 @@ function exportReport(run, params) {
     `Expected utilization: ${util.toFixed(1)}%`,
     `Risks: ${risks.join(', ')}`,
   ].join('\n')
-  download(md, 'text/markdown', 'aurix-capacity.md')
+  download(md, 'text/markdown', 'gparx-capacity.md')
 }
 
 function download(text, mime, name) {
