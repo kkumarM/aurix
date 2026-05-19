@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Field from './forms/Field'
 import { inputBase, selectBase } from '../styles/formClasses'
 import PipelineEditor from './PipelineEditor'
@@ -45,12 +45,17 @@ export default function ScenarioPanel({
   toast,
   collapsed,
   setCollapsed,
+  openWizardSignal,
 }) {
   const [wizardOpen, setWizardOpen] = useState(false)
   const [calibOpen, setCalibOpen] = useState(false)
   const [openSections, setOpenSections] = useState({ workload: true, target: true, pipeline: true })
   const [errors, setErrors] = useState('')
   const [infoOpen, setInfoOpen] = useState(null)
+
+  useEffect(() => {
+    if (openWizardSignal > 0) setWizardOpen(true)
+  }, [openWizardSignal])
 
   const updateScenario = (path, value) => {
     setScenario((prev) => {

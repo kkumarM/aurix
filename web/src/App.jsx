@@ -21,6 +21,9 @@ import HintPill from './components/HintPill'
 import DecisionSummary from './components/DecisionSummary'
 import ExplainPanel from './components/ExplainPanel'
 import StoryMode from './components/StoryMode'
+import FlowMap from './components/FlowMap'
+import LlmCostPlanner from './components/LlmCostPlanner'
+import RealTraceWorkspace from './components/RealTraceWorkspace'
 
 const API = '' // proxied to 8080 via Vite config
 
@@ -68,12 +71,16 @@ export default function App() {
   })
   const [resizing, setResizing] = useState(false)
   const [savedList, setSavedList] = useState(loadIndex())
-  const runA = runs.find((r) => r.id === compareIds[0])
-  const runB = runs.find((r) => r.id === compareIds[1])
+  const [wizardRequestKey, setWizardRequestKey] = useState(0)
+  const [sweepRequest, setSweepRequest] = useState({ mode: 'rps', key: 0 })
 
   const addRun = (newRun) => setRuns((prev) => [...prev.slice(-9), newRun])
   const goCompare = () => setActiveTab('compare')
   const goSweeps = () => setActiveTab('sweeps')
+  const showToast = (message) => {
+    setToast(message)
+    setTimeout(() => setToast(''), 1400)
+  }
 
   useEffect(() => {
     localStorage.setItem('sim_runs', JSON.stringify(runs.slice(-10)))
@@ -176,13 +183,15 @@ export default function App() {
   }
 
   const openTimeline = () => setActiveTab('timeline')
-  const openRunById = (id) => {
+  const openRunById = (id, tab = 'timeline') => {
     const r = runs.find((x) => x.id === id)
     if (r) {
       setRun(r)
-      setActiveTab('timeline')
+      setActiveTab(tab)
     }
   }
+  const openRunTimelineById = (id) => openRunById(id, 'timeline')
+  const openRunSummaryById = (id) => openRunById(id, 'results')
 
   // timeline playback loop
   useEffect(() => {
@@ -206,8 +215,7 @@ export default function App() {
     try {
       const { index } = saveScenarioEntry(sc)
       setSavedList(index)
-      setToast('Scenario saved')
-      setTimeout(() => setToast(''), 1200)
+      showToast('Scenario saved')
     } catch {
       setToast('Save failed')
     }
@@ -218,8 +226,7 @@ export default function App() {
     const sc = loadScenario(id)
     if (sc) {
       setScenario(sc)
-      setToast('Scenario loaded')
-      setTimeout(() => setToast(''), 1200)
+      showToast('Scenario loaded')
     }
   }
 
@@ -231,6 +238,54 @@ export default function App() {
   }
 
   const handleReset = () => setScenario(defaultScenario)
+  const openScenarioBuilder = () => {
+    setCollapsed(false)
+    setActiveTab('results')
+  }
+  const openWizard = () => {
+    setCollapsed(false)
+    setActiveTab('results')
+    setWizardRequestKey((prev) => prev + 1)
+  }
+  const openPlanner = () => setActiveTab('planner')
+  const openTraceWorkspace = () => setActiveTab('trace')
+  const openSweepsForScenario = (nextScenario, mode = 'rps') => {
+    setCollapsed(false)
+    setScenario(structuredClone(nextScenario))
+    setSweepRequest({ mode, key: Date.now() })
+    setActiveTab('sweeps')
+  }
+  const handlePlannerRun = (plannerRun, generatedScenario) => {
+    setScenario(generatedScenario)
+    setRun(plannerRun)
+    addRun(plannerRun)
+  }
+  const openPlannerScenario = (generatedScenario) => {
+    setCollapsed(false)
+    setScenario(structuredClone(generatedScenario))
+    setActiveTab('results')
+  }
+  const openPlannerTimeline = (plannerRun, generatedScenario) => {
+    setCollapsed(false)
+    setScenario(structuredClone(generatedScenario))
+    setRun(plannerRun)
+    setActiveTab('timeline')
+  }
+  const openPlannerCompare = (runAId, runBId) => {
+    setCompareIds([runAId, runBId])
+    setActiveTab('compare')
+  }
+  const loadExampleScenario = (nextScenario) => {
+    setCollapsed(false)
+    setScenario(structuredClone(nextScenario))
+    setActiveTab('results')
+    showToast(`Loaded ${nextScenario.name}`)
+  }
+  const loadAndRunExampleScenario = (nextScenario) => {
+    setCollapsed(false)
+    setActiveTab('results')
+    handleRun(structuredClone(nextScenario))
+  }
 
   const startResize = (e) => {
     e.preventDefault()
@@ -256,6 +311,7 @@ export default function App() {
               toast={toast}
               collapsed={collapsed}
               setCollapsed={setCollapsed}
+              openWizardSignal={wizardRequestKey}
             />
             {!collapsed && <div className="mt-2"><HintPill id="scenario-hint" text="Not sure what to enter? Try the Wizard or Calibrate LLM." /></div>}
             <div
@@ -272,6 +328,8 @@ export default function App() {
                 { id: 'timeline', label: 'Timeline' },
                 { id: 'compare', label: 'Compare' },
                 { id: 'sweeps', label: 'Sweeps' },
+                { id: 'trace', label: 'Real Trace' },
+                { id: 'planner', label: 'LLM Planner' },
               ]}
               active={activeTab}
               onChange={setActiveTab}
@@ -279,18 +337,26 @@ export default function App() {
             <div className="p-4 space-y-4">
               {activeTab === 'results' && (
                 <div className="space-y-3">
-                  <HintPill id="results-hint" text="Want to compare configurations? Open Compare tab to diff two runs." />
                   {(!run && !loading) ? (
                     <StartHere
-                      onBuild={() => setCollapsed(false)}
-                      onRun={() => handleRun(scenario)}
-                      onTimeline={() => setActiveTab('timeline')}
-                      onCompare={() => runs.length ? goCompare() : goSweeps()}
-                      onUploadTrace={() => setActiveTab('docs')}
+                      onOpenPlanner={openPlanner}
+                      onOpenWizard={openWizard}
+                      onOpenCompare={() => runs.length ? goCompare() : goSweeps()}
+                      onUploadTrace={openTraceWorkspace}
+                      onOpenScenarioBuilder={openScenarioBuilder}
+                      onOpenDocs={() => setActiveTab('docs')}
+                      onLoadExample={loadExampleScenario}
+                      onLoadAndRunExample={loadAndRunExampleScenario}
                     />
                   ) : (
                     <>
-                      <DecisionSummary diagnostics={diagnostics} onExplain={() => setShowExplain(true)} />
+                      <DecisionSummary
+                        diagnostics={diagnostics}
+                        summary={run?.summary}
+                        scenario={run?.scenario || scenario}
+                        onExplain={() => setShowExplain(true)}
+                      />
+                      <HintPill id="results-hint" text="Use Decision Summary first, then Compare or Sweeps if you need to test alternatives." />
                       <RunResults
                         scenario={scenario}
                         run={run}
@@ -314,7 +380,7 @@ export default function App() {
                         onBottleneck={() => setActiveTab('results')}
                         onSla={() => setActiveTab('results')}
                         onConcurrency={() => (runs.length ? goSweeps() : setActiveTab('docs'))}
-                        onGpuCount={() => setActiveTab('docs')}
+                        onGpuCount={openPlanner}
                         onCompare={() => goCompare()}
                       />
                     </>
@@ -328,12 +394,6 @@ export default function App() {
                   {run && <HintPill id="timeline-hint" text="Need the flow? Use playback to see queue, transfer, compute overlap." />}
                   {run && (
                     <>
-                      <FlowMap
-                        diagnostics={diagnostics}
-                        stageAggregates={run?.breakdown?.stage_aggregates}
-                        selected={highlightLane}
-                        onSelect={(lane) => setHighlightLane(lane)}
-                      />
                       <TimelineControls
                         playing={playing}
                         onTogglePlay={() => setPlaying((p) => !p)}
@@ -359,7 +419,18 @@ export default function App() {
                         onStory={() => setStoryOpen(true)}
                         highlightLane={highlightLane}
                       />
-                      <DecisionSummary diagnostics={diagnostics} compact />
+                      <DecisionSummary
+                        diagnostics={diagnostics}
+                        summary={run?.summary}
+                        scenario={run?.scenario || scenario}
+                        compact
+                      />
+                      <FlowMap
+                        diagnostics={diagnostics}
+                        stageAggregates={run?.breakdown?.stage_aggregates}
+                        selected={highlightLane}
+                        onSelect={(lane) => setHighlightLane(lane)}
+                      />
 
                       <div className={`grid gap-3 ${inspectorOpen ? 'lg:grid-cols-[1fr,280px]' : 'lg:grid-cols-[1fr]'} `} style={{ minHeight: timelineHeight ? 520 : 420 }}>
                         <div className="min-h-[420px]">
@@ -406,7 +477,14 @@ export default function App() {
               )}
 
               {activeTab === 'compare' && (
-                <CompareView runs={runs} compareIds={compareIds} onSelect={handleCompare} backendUrl={API} />
+                <CompareView
+                  runs={runs}
+                  compareIds={compareIds}
+                  onSelect={handleCompare}
+                  backendUrl={API}
+                  onOpenSummary={openRunSummaryById}
+                  onOpenTimeline={openRunTimelineById}
+                />
               )}
 
               {activeTab === 'sweeps' && (
@@ -414,8 +492,26 @@ export default function App() {
                   backendUrl={API}
                   baseScenario={scenario}
                   addRun={addRun}
-                  openRun={openRunById}
+                  openRun={openRunTimelineById}
+                  openRunSummary={openRunSummaryById}
+                  requestedTab={sweepRequest.mode}
+                  requestedTabKey={sweepRequest.key}
                   setActiveTab={setActiveTab}
+                />
+              )}
+
+              {activeTab === 'trace' && (
+                <RealTraceWorkspace backendUrl={API} />
+              )}
+
+              {activeTab === 'planner' && (
+                <LlmCostPlanner
+                  backendUrl={API}
+                  onPlannerRun={handlePlannerRun}
+                  onOpenScenario={openPlannerScenario}
+                  onOpenTimeline={openPlannerTimeline}
+                  onOpenSweep={openSweepsForScenario}
+                  onCompareRuns={openPlannerCompare}
                 />
               )}
 
@@ -433,7 +529,7 @@ export default function App() {
                     <li>Each bar is a stage span for a request; overlap means parallel work.</li>
                     <li>Playback cursor shows current time; active spans brighten, counters update live.</li>
                     <li>Use Zoom and Speed to inspect hot spots; indicators call out queueing or GPU saturation.</li>
-                    <li>Upload an Nsight sqlite to see a real trace; overlay/compare from the Timeline/Compare tabs.</li>
+                    <li>Use the Real Trace tab to ingest an Nsight sqlite, then return to Timeline or Compare to reason against simulations.</li>
                   </ul>
                 </div>
               )}

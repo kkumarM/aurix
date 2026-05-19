@@ -1,12 +1,26 @@
+import Card from './ui/Card'
+import Button from './ui/Button'
 import TimelineViewer from './TimelineViewer'
 
-export default function CompareView({ runs, compareIds, onSelect, backendUrl }) {
+export default function CompareView({ runs, compareIds, onSelect, backendUrl, onOpenSummary, onOpenTimeline }) {
   const options = runs.map((r) => ({ id: r.id, label: `${r.id} • ${r.summary?.throughput_rps?.toFixed(2) ?? '?'} rps / p99 ${(r.summary?.p99_ms ?? 0).toFixed(1)} ms` }))
   const runA = runs.find((r) => r.id === compareIds[0])
   const runB = runs.find((r) => r.id === compareIds[1])
 
   return (
     <div className="space-y-3">
+      <Card className="p-4 space-y-3">
+        <div className="text-slate-100 font-semibold">Compare outcomes first, then inspect why</div>
+        <div className="text-sm text-slate-400">
+          Use each run&apos;s Decision Summary to compare feasibility and bottleneck, then use the stacked timelines below to validate the reason.
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {runA && <Button variant="secondary" onClick={() => onOpenSummary?.(runA.id)}>Open Run A summary</Button>}
+          {runB && <Button variant="secondary" onClick={() => onOpenSummary?.(runB.id)}>Open Run B summary</Button>}
+          {runA && <Button variant="ghost" onClick={() => onOpenTimeline?.(runA.id)}>Open Run A timeline</Button>}
+          {runB && <Button variant="ghost" onClick={() => onOpenTimeline?.(runB.id)}>Open Run B timeline</Button>}
+        </div>
+      </Card>
       <div className="grid md:grid-cols-2 gap-2 text-sm">
         <Select label="Run A" options={options} value={compareIds[0]} onChange={(id) => onSelect(id, compareIds[1])} />
         <Select label="Run B" options={options} value={compareIds[1]} onChange={(id) => onSelect(compareIds[0], id)} />

@@ -1,119 +1,182 @@
 import React from 'react'
+import Card from './ui/Card'
 
 export default function AboutGparx() {
   return (
-    <div className="max-w-4xl mx-auto space-y-6 text-slate-200">
-      <header className="flex items-center gap-3">
+    <div className="max-w-5xl mx-auto space-y-5 text-slate-200">
+      <header className="flex items-center gap-4">
         <GparxLogo />
-        <div>
+        <div className="space-y-1">
           <div className="text-2xl font-semibold">GPARX — GPU Performance Analysis &amp; Reasoning eXplorer</div>
-          <div className="text-sm text-slate-400">Workload-level reasoning for GPU systems</div>
+          <div className="text-sm text-slate-400">Outcome-first reasoning for GPU workload planning, capacity, and performance behavior.</div>
         </div>
       </header>
 
-      <p className="text-slate-300 leading-relaxed">
-        GPARX is a workload-level performance reasoning tool designed to help engineers understand, explain, and predict GPU system behavior before and after deployment.
-      </p>
+      <Card className="p-5 space-y-4">
+        <Section
+          title="What problem does GPARX solve?"
+          body="GPARX helps engineers and teams reason about GPU workload behavior before deployment by estimating performance, queueing, saturation, and cost drivers."
+        />
 
-      <Section title="What GPARX Is" bullets={[
-        'Scenario-driven performance modeling',
-        'Timeline-based system visualization',
-        'Queueing, overlap, and saturation analysis',
-        'What-if analysis and capacity planning',
-        'Calibration using Nsight Systems traces',
-      ]} />
+        <Section
+          title="Who is it for?"
+          bullets={[
+            'LLM developers',
+            'platform teams',
+            'performance engineers',
+            'corporate infrastructure teams',
+            'individuals evaluating GPUs',
+          ]}
+        />
 
-      <Section title="What GPARX Is Not" bullets={[
-        'Not a CUDA or GPU instruction simulator',
-        'Not a kernel-level optimizer',
-        'Not a benchmark replacement',
-        'Not a profiler',
-      ]} tone="negative" />
+        <Section
+          title="What can I answer with GPARX?"
+          bullets={[
+            'Which GPU profile should I try?',
+            'Will my workload meet p99 latency?',
+            'What happens if I increase concurrency?',
+            'Where is my bottleneck?',
+            'What workload shape causes queueing?',
+            'How should I plan GPU capacity?',
+          ]}
+        />
 
-      <div className="space-y-2">
-        <h3 className="text-lg font-semibold">How to Use GPARX</h3>
-        <ol className="list-decimal list-inside space-y-1 text-slate-300">
-          <li>Define workload intent (RPS, concurrency, pipeline)</li>
-          <li>Run simulation and inspect timeline</li>
-          <li>Identify bottlenecks and saturation</li>
-          <li>Compare GPU profiles or configurations</li>
-          <li>(Optional) Calibrate with real Nsight trace</li>
-        </ol>
+        <Section
+          title="What GPARX is not"
+          bullets={[
+            'not a CUDA simulator',
+            'not a chemistry/model simulator',
+            'not a benchmark replacement',
+            'not a profiler replacement',
+          ]}
+          tone="negative"
+        />
+      </Card>
+
+      <div className="grid lg:grid-cols-[1.2fr,0.8fr] gap-4">
+        <Card className="p-5 space-y-4">
+          <div className="text-lg font-semibold text-slate-100">Suggested workflow</div>
+          <ol className="list-decimal list-inside space-y-2 text-sm text-slate-300">
+            <li>Choose your goal.</li>
+            <li>Use Wizard or Expert Scenario Builder.</li>
+            <li>Run simulation.</li>
+            <li>Read Decision Summary.</li>
+            <li>Inspect Timeline if needed.</li>
+            <li>Use Sweeps/Compare for what-if analysis.</li>
+            <li>Calibrate with real trace when available.</li>
+          </ol>
+        </Card>
+
+        <Card className="p-5 space-y-4">
+          <div className="text-lg font-semibold text-slate-100">Where GPARX is headed</div>
+          <div className="text-sm text-slate-300">
+            Phase 1 makes the current simulator easier to understand and use. Phase 2 expands that into LLM cost and capacity planning with clearer SLA and GPU-count workflows.
+          </div>
+          <div className="text-sm text-slate-400">
+            Today you can already use examples, Wizard, Timeline, Compare, Sweeps, and real trace ingestion to reason about deployment decisions.
+          </div>
+        </Card>
       </div>
 
-      <div className="space-y-2">
-        <h3 className="text-lg font-semibold">Design Philosophy</h3>
-        <p className="text-slate-300 leading-relaxed">
-          GPARX prioritizes explainability over strict realism, focusing on system behavior rather than kernel microarchitecture. Visualization is used as a reasoning tool to reveal queueing, overlap, and saturation so teams can make confident decisions quickly.
-        </p>
-      </div>
+      <Card className="p-5 space-y-4">
+        <div className="text-lg font-semibold text-slate-100">LLM Cost Planner</div>
+        <div className="text-sm text-slate-300">
+          The LLM Cost Planner turns LLM-native inputs such as model choice, quantization, tokens, RPS, SLA, and GPU pricing into a generated GPARX scenario, runs the simulator, and returns a decision-oriented capacity and cost estimate.
+        </div>
+        <Section
+          title="What it does"
+          bullets={[
+            'maps LLM inputs into a generated simulation scenario',
+            'checks approximate memory feasibility on the chosen GPU',
+            'estimates p50, p99, bottleneck, GPU count, monthly cost, and cost per 1M tokens',
+            'lets you open the generated scenario, inspect timeline, run sweeps, and compare GPUs',
+          ]}
+        />
+        <Section
+          title="What the inputs mean"
+          bullets={[
+            'model and quantization define the weight and compute footprint',
+            'input/output tokens define request shape and total tokens per request',
+            'average and peak RPS control cost and capacity sizing',
+            'GPU profile and hourly price control performance assumptions and cost',
+            'serving mode and concurrency shape batching and KV-cache pressure',
+          ]}
+        />
+        <Section
+          title="What the outputs mean"
+          bullets={[
+            'feasibility summarizes whether the plan should meet the SLA',
+            'required GPU count sizes capacity with safety headroom',
+            'monthly cost and cost per 1M tokens express operating cost',
+            'memory feasibility warns when the plan is too tight or too large for the selected GPU',
+            'bottleneck explains what to inspect next in timeline or sweeps',
+          ]}
+        />
+        <Section
+          title="When to trust it"
+          bullets={[
+            'for early planning, architecture tradeoffs, and rough cost comparisons',
+            'for deciding which GPU family or capacity range to benchmark first',
+          ]}
+        />
+        <Section
+          title="When to calibrate"
+          bullets={[
+            'when you already have a serving stack and real measurements',
+            'when small latency differences change product or SLA decisions',
+            'when memory, batching, or scheduler behavior is framework-specific',
+          ]}
+        />
+        <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+          This is a planning estimator. Production decisions should be validated with benchmarks or Nsight traces.
+        </div>
+      </Card>
 
-      <div className="space-y-2">
-        <h3 className="text-lg font-semibold">When to use GPARX vs Nsight</h3>
-        <p className="text-slate-300 leading-relaxed">
-          Use GPARX for rapid scenario exploration, capacity planning, and communicating system-level behavior. Use Nsight Systems for detailed profiling and low-level validation; you can import Nsight traces into GPARX for calibration and comparison.
-        </p>
-      </div>
-
-      <Capabilities />
+      <Card className="p-5 space-y-4">
+        <div className="text-lg font-semibold text-slate-100">Project visibility checklist</div>
+        <ul className="space-y-2 text-sm text-slate-300">
+          <li className="flex items-center gap-2"><Dot /><span>Add GitHub description</span></li>
+          <li className="flex items-center gap-2"><Dot /><span>Add topics: gpu, llm, inference, capacity-planning, performance-analysis, nsight, nvidia, cost-estimation</span></li>
+          <li className="flex items-center gap-2"><Dot /><span>Add screenshots / GIF</span></li>
+          <li className="flex items-center gap-2"><Dot /><span>Add release v0.1.0</span></li>
+          <li className="flex items-center gap-2"><Dot /><span>Add demo workflow</span></li>
+        </ul>
+      </Card>
     </div>
   )
 }
 
-function Section({ title, bullets, tone = 'neutral' }: { title: string; bullets: string[]; tone?: 'neutral' | 'negative' }) {
-  const bulletColor = tone === 'negative' ? 'text-red-300' : 'text-emerald-200'
+function Section({
+  title,
+  body,
+  bullets,
+  tone = 'neutral',
+}: {
+  title: string
+  body?: string
+  bullets?: string[]
+  tone?: 'neutral' | 'negative'
+}) {
   return (
     <div className="space-y-2">
-      <h3 className="text-lg font-semibold">{title}</h3>
-      <ul className="list-disc list-inside space-y-1 text-slate-300">
-        {bullets.map((b) => (
-          <li key={b} className="flex gap-2 items-start">
-            <span className={`w-2 h-2 mt-2 rounded-full ${tone === 'negative' ? 'bg-red-400' : 'bg-emerald-400'}`}></span>
-            <span className={tone === 'negative' ? 'text-slate-300' : 'text-slate-200'}>{b}</span>
-          </li>
-        ))}
-      </ul>
+      <div className="text-lg font-semibold text-slate-100">{title}</div>
+      {body && <div className="text-sm text-slate-300 leading-relaxed">{body}</div>}
+      {bullets && (
+        <ul className="space-y-2 text-sm">
+          {bullets.map((bullet) => (
+            <li key={bullet} className="flex items-start gap-2">
+              <span className={`mt-1.5 h-2 w-2 rounded-full ${tone === 'negative' ? 'bg-red-400' : 'bg-emerald-400'}`} />
+              <span className="text-slate-300">{bullet}</span>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   )
 }
 
-function Capabilities() {
-  const capabilities = [
-    { name: 'Scenario Builder', answers: 'Describe workload intent and target GPU', for: 'Perf & infra engineers', level: 'Beginner' },
-    { name: 'Timeline / Playback', answers: 'See queueing, compute, transfer, overlap', for: 'Perf & SRE', level: 'Beginner' },
-    { name: 'Compare Runs', answers: 'Understand how changes affect behavior', for: 'Perf analysts', level: 'Beginner' },
-    { name: 'Real Trace Upload', answers: 'Bring in Nsight Systems traces for comparison', for: 'GPU owners', level: 'Advanced' },
-    { name: 'Sweeps', answers: 'Explore how RPS/concurrency changes p99 & throughput', for: 'Capacity planners', level: 'Advanced' },
-    { name: 'Docs / Help', answers: 'Learn how to interpret results', for: 'New users', level: 'Beginner' },
-  ]
-  return (
-    <div className="space-y-3">
-      <h3 className="text-lg font-semibold">Capabilities</h3>
-      <div className="bg-slate-900/70 border border-slate-800 rounded-lg p-3 overflow-x-auto">
-        <table className="min-w-full text-sm text-slate-200">
-          <thead className="text-slate-400 text-xs">
-            <tr>
-              <th className="text-left py-1">Capability</th>
-              <th className="text-left py-1">Answers what?</th>
-              <th className="text-left py-1">Best for</th>
-              <th className="text-left py-1">Level</th>
-            </tr>
-          </thead>
-          <tbody>
-            {capabilities.map((c) => (
-              <tr key={c.name} className="border-t border-slate-800">
-                <td className="py-1">{c.name}</td>
-                <td className="py-1 text-slate-300">{c.answers}</td>
-                <td className="py-1 text-slate-400">{c.for}</td>
-                <td className="py-1 text-slate-200">{c.level}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <div className="text-xs text-slate-500">Sweeps feature is available in the UI; README feature list should be updated. {/* TODO README update */}</div>
-    </div>
-  )
+function Dot() {
+  return <span className="h-2 w-2 rounded-full bg-emerald-400" />
 }
 
 function GparxLogo() {

@@ -19,6 +19,15 @@ export default function CalibrationModal({ open, onClose, scenario, setScenario 
       const next = structuredClone(prev)
       next.workload = { ...next.workload, batch_size: 1 }
       next.target = { ...next.target, ms_per_token: msPerToken }
+      next.meta = {
+        ...(next.meta || {}),
+        calibration: {
+          source: 'llm-measurement',
+          prompt_tokens: promptTokens,
+          output_tokens: outputTokens,
+          latency_ms: latencyMs,
+        },
+      }
       next.pipeline = [
         { name: 'preprocess', kind: 'fixed_ms', value: 2 },
         { name: 'h2d', kind: 'bytes', value: h2dBytes },

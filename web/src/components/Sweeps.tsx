@@ -6,7 +6,7 @@ import HintPill from './HintPill'
 
 type SweepRun = { id: string; param: number; summary: any }
 
-export default function Sweeps({ backendUrl, baseScenario, addRun, openRun, setActiveTab }) {
+export default function Sweeps({ backendUrl, baseScenario, addRun, openRun, openRunSummary, requestedTab = 'rps', requestedTabKey = 0, setActiveTab }) {
   const [rpsCfg, setRpsCfg] = useState(() => loadCfg('rps', { start: 1, end: 8, step: 1, duration: 10 }))
   const [conCfg, setConCfg] = useState(() => loadCfg('con', { start: 1, end: 8, step: 1, duration: 10 }))
   const [rpsRuns, setRpsRuns] = useState(() => loadRuns('rps'))
@@ -19,6 +19,9 @@ export default function Sweeps({ backendUrl, baseScenario, addRun, openRun, setA
   useEffect(() => saveCfg('con', conCfg), [conCfg])
   useEffect(() => saveRuns('rps', rpsRuns), [rpsRuns])
   useEffect(() => saveRuns('con', conRuns), [conRuns])
+  useEffect(() => {
+    setTab(requestedTab)
+  }, [requestedTab, requestedTabKey])
 
   const rpsKnee = useMemo(() => findKnee(rpsRuns, 'param', 'p99'), [rpsRuns])
   const conRec = useMemo(() => recommendConcurrency(conRuns), [conRuns])
@@ -80,7 +83,7 @@ export default function Sweeps({ backendUrl, baseScenario, addRun, openRun, setA
             {running && <Button variant="ghost" onClick={() => setCancel(true)}>Cancel</Button>}
           </div>
           <Charts data={chartDataRps} knee={rpsKnee} label="RPS" />
-          <Interpretation knee={rpsKnee} runs={rpsRuns} kind="RPS" best={bestRps} openRun={openRun} setActiveTab={setActiveTab} />
+          <Interpretation knee={rpsKnee} runs={rpsRuns} kind="RPS" best={bestRps} openRun={openRun} openRunSummary={openRunSummary} setActiveTab={setActiveTab} />
           <RunTable runs={rpsRuns} onOpen={openRun} />
         </Card>
       )}
@@ -100,7 +103,7 @@ export default function Sweeps({ backendUrl, baseScenario, addRun, openRun, setA
             {conRec && <span className="text-sm text-emerald-200">Recommended concurrency: {conRec}</span>}
           </div>
           <Charts data={chartDataCon} knee={null} label="Concurrency" showThroughput={false} />
-          <Interpretation knee={null} runs={conRuns} kind="Concurrency" best={bestCon} openRun={openRun} setActiveTab={setActiveTab} />
+          <Interpretation knee={null} runs={conRuns} kind="Concurrency" best={bestCon} openRun={openRun} openRunSummary={openRunSummary} setActiveTab={setActiveTab} />
           <RunTable runs={conRuns} onOpen={openRun} />
         </Card>
       )}
@@ -272,7 +275,7 @@ function fmt(v) {
   return typeof v === 'number' ? v.toFixed(2) : v
 }
 
-function Interpretation({ knee, runs, kind, best, openRun, setActiveTab }) {
+function Interpretation({ knee, runs, kind, best, openRun, openRunSummary, setActiveTab }) {
   if (!runs.length) return null
   const text = knee
     ? `${kind} knee around ${knee.x}: p99 bends upward while throughput gain flattens.`
@@ -282,7 +285,8 @@ function Interpretation({ knee, runs, kind, best, openRun, setActiveTab }) {
       <div className="text-slate-200 text-sm font-semibold">Interpretation</div>
       <div className="text-sm text-slate-300">{text}</div>
       <div className="flex gap-2">
-        {best && <Button variant="secondary" onClick={() => openRun(best.id)}>Open best run</Button>}
+        {best && <Button variant="secondary" onClick={() => openRunSummary?.(best.id)}>Open best run summary</Button>}
+        {best && <Button variant="ghost" onClick={() => openRun(best.id)}>Inspect best run timeline</Button>}
         {knee && <Button variant="ghost" onClick={() => { openRun(best?.id || runs[0].id); setActiveTab('compare') }}>Compare knee run</Button>}
       </div>
     </Card>

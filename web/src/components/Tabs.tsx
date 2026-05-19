@@ -5,7 +5,7 @@ type Tab = { id: string; label: string }
 export default function Tabs({ tabs, active, onChange }: { tabs: Tab[]; active: string; onChange: (id: string) => void }) {
   return (
     <div className="sticky top-[64px] z-20 bg-slate-950/80 backdrop-blur border-b border-slate-800">
-      <div className="flex gap-2 px-4 py-2">
+      <div className="flex flex-wrap gap-2 px-4 py-2">
         {tabs.map((t) => (
           <button
             key={t.id}

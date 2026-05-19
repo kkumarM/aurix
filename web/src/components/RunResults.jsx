@@ -74,10 +74,10 @@ function SummaryLines({ summary, label }) {
   return (
     <ul className="space-y-1">
       <li className="text-slate-200">{label}</li>
-      <li className="text-slate-300">Throughput: {fmt(summary.throughput)}</li>
+      <li className="text-slate-300">Throughput: {fmt(summary.throughput_rps ?? summary.throughput)}</li>
       <li className="text-slate-300">p50 / p99: {fmt(summary.p50_ms || summary.p50)} / {fmt(summary.p99_ms || summary.p99)} ms</li>
-      <li className="text-slate-300">Queue wait: {fmt(summary.queue_wait_ms || summary.avg_queue_wait_ms)} ms</li>
-      <li className="text-slate-300">Compute busy: {fmt(summary.gpu_util || summary.compute_busy)}%</li>
+      <li className="text-slate-300">Queue wait: {fmt(summary.avg_queue_ms ?? summary.queue_wait_ms ?? summary.avg_queue_wait_ms)} ms</li>
+      <li className="text-slate-300">Compute busy: {fmt(summary.gpu_util_percent ?? summary.gpu_util ?? summary.compute_busy)}%</li>
     </ul>
   )
 }
@@ -119,7 +119,7 @@ async function duplicateAndRun(run, profile, ctx) {
 
 function exportReport(run, params) {
   if (!run?.summary) return
-  const perGpu = run.summary.throughput || 0
+  const perGpu = run.summary.throughput_rps ?? run.summary.throughput ?? 0
   const required = perGpu > 0 ? Math.ceil((params.rps || 0) / (perGpu * 0.85)) : 1
   const util = perGpu > 0 ? Math.min(100, ((params.rps || 0) / (required * perGpu)) * 100) : 0
   const risks = util > 85 ? ['High utilization risk'] : ['Moderate headroom']
@@ -157,8 +157,8 @@ function download(text, mime, name) {
 function buildExplanation(run, diagnostics) {
   const s = run?.summary || {}
   const p99 = s.p99_ms || s.p99
-  const queue = s.queue_wait_ms || s.avg_queue_wait_ms
-  const gpu = s.gpu_util || s.compute_busy
+  const queue = s.avg_queue_ms ?? s.queue_wait_ms ?? s.avg_queue_wait_ms
+  const gpu = s.gpu_util_percent ?? s.gpu_util ?? s.compute_busy
   const primary = diagnostics?.primary || 'Balanced'
   const lines = []
   lines.push(`This run appears ${primary.toLowerCase()}.`)
