@@ -29,6 +29,7 @@ import Card from './components/ui/Card'
 import { buildJsonReport, buildMarkdownReport } from './utils/llmCost'
 import { buildAgentPayload } from './utils/agentPayload'
 import AgentDiagnosisPanel from './components/agent/AgentDiagnosisPanel'
+import AdvisorWorkspace from './components/AdvisorWorkspace'
 
 const API = '' // proxied to 8080 via Vite config
 
@@ -494,7 +495,7 @@ export default function App() {
             )}
 
             {activeTab === 'advisor' && (
-              <AgentDiagnosisPanel
+              <AdvisorWorkspace
                 run={run}
                 scenario={run?.scenario || scenario}
                 advisor={advisor}
@@ -504,8 +505,9 @@ export default function App() {
                 onGoalChange={setAdvisorGoal}
                 onRetry={() => setAdvisorRequestKey((prev) => prev + 1)}
                 onRunSweep={() => openSweepsForScenario(run?.scenario || scenario, 'rps')}
-                onCompareGpu={openPlanner}
-                onOpenTimeline={openTimeline}
+                onOpenPlanner={openPlanner}
+                onOpenExpert={openScenarioBuilder}
+                onOpenSweeps={goSweeps}
               />
             )}
 
