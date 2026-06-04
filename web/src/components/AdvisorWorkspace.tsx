@@ -1,6 +1,7 @@
 import React from 'react'
 import Card from './ui/Card'
 import Badge from './ui/Badge'
+import ExperimentPlanPanel from './advisor/ExperimentPlanPanel'
 
 type Recommendation = {
   title: string
@@ -223,31 +224,7 @@ export default function AdvisorWorkspace({ run, scenario, advisor, goal, loading
           </div>
 
           {/* Bottom: Experiment Plan */}
-          <Card className="p-5 space-y-4">
-            <div className="text-lg font-semibold text-slate-100">Recommended Experiment Plan</div>
-            {advisor.next_experiments && advisor.next_experiments.length > 0 ? (
-              <div>
-                <ul className="space-y-2 text-sm text-slate-300">
-                  {advisor.next_experiments.map((experiment) => (
-                    <li key={experiment} className="flex items-start gap-2">
-                      <span className="mt-1.5 h-2 w-2 rounded-full bg-blue-400 flex-shrink-0" />
-                      <span>{experiment}</span>
-                    </li>
-                  ))}
-                </ul>
-                <div className="flex flex-wrap gap-2 mt-4">
-                  <button className="rounded-md bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-emerald-400 transition" onClick={onRunSweep}>
-                    Run Sweep
-                  </button>
-                  <button className="rounded-md border border-slate-700 px-4 py-2 text-sm text-slate-200 hover:border-slate-600 transition">
-                    View Timeline
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="text-sm text-slate-500">No experiments recommended at this time.</div>
-            )}
-          </Card>
+          <ExperimentPlanPanel advisor={advisor} scenario={scenario} run={run} />
 
           {/* Ask gPARX Placeholder */}
           <Card className="p-5 space-y-3 bg-gradient-to-r from-slate-900/50 to-slate-900/30 border-slate-800">
