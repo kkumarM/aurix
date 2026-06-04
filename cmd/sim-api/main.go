@@ -13,6 +13,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
 
+	"simulator/pkg/agent"
 	"simulator/pkg/nsys"
 	"simulator/pkg/schema"
 	"simulator/pkg/sim"
@@ -58,9 +59,7 @@ func main() {
 	r.Get("/v1/runs/{id}", handleGetRun)
 	r.Get("/v1/runs/{id}/trace", handleGetTrace)
 	r.Get("/v1/runs/{id}/breakdown", handleGetBreakdown)
-	r.Post("/v1/realtraces", handleUploadRealTrace)
-	r.Get("/v1/realtraces/{id}/trace", handleGetRealTrace)
-	r.Get("/v1/realtraces/{id}/metrics", handleGetRealMetrics)
+	r.Post("/v1/agent/diagnose", handleAgentDiagnose)
 
 	addr := ":8080"
 	if v := os.Getenv("PORT"); v != "" {
@@ -196,6 +195,16 @@ func handleGetBreakdown(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, rec.breakdown)
+}
+
+func handleAgentDiagnose(w http.ResponseWriter, r *http.Request) {
+	var req agent.DiagnosisRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid JSON")
+		return
+	}
+	resp := agent.DiagnoseRequest(req)
+	writeJSON(w, http.StatusOK, resp)
 }
 
 func (r *runStore) get(id string) (runRecord, bool) {

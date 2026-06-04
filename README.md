@@ -12,6 +12,18 @@
 
 End-to-end simulator with Go backend and React/Tailwind web UI. Models request pipelines (preprocess → h2d → compute → d2h → postprocess), queueing, GPU bandwidth/compute constraints, and emits Chrome trace JSON for visualization. Supports overlaying real Nsight Systems traces (sqlite) for comparison.
 
+**gPARX** is an AI-ready GPU inference performance advisor for LLM serving, benchmark analysis, and accelerated workload planning.
+
+It helps users estimate, diagnose, and explain GPU workload behavior before and after deployment by combining:
+
+- LLM cost and capacity planning
+- scenario-based workload simulation
+- timeline visualization
+- benchmark and trace interpretation
+- rule-based advisor diagnosis
+- sweep and comparison workflows
+- future-ready LLM assistant interfaces
+
 ## Requirements
 - Go (1.18 here; code targets 1.22 features lightly)
 - Node 18+ / npm for the web UI
@@ -50,6 +62,7 @@ UI features:
 - Live counters during playback (queued, GPU, transfer, CPU); bottleneck cues (GPU saturated / queue forming)
 - Run history and basic run comparison
 - Trace download link
+- gPARX Advisor for rule-driven bottleneck diagnosis and recommendations
 
 ## API (sim-api)
 - `POST /v1/scenarios` → `{scenario_id}`
@@ -58,6 +71,7 @@ UI features:
 - `GET  /v1/runs/{id}` → run summary
 - `GET  /v1/runs/{id}/breakdown` → per-stage/per-request breakdown
 - `GET  /v1/runs/{id}/trace` → Chrome trace JSON
+- `POST /v1/agent/diagnose` → advisor diagnosis based on run or benchmark payload
 - Real traces (Nsight Systems):
   - `POST /v1/realtraces` (multipart upload sqlite or .nsys-rep) → `{ real_trace_id }`
   - `GET /v1/realtraces/{id}/trace` → real Chrome trace JSON

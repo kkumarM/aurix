@@ -1,7 +1,7 @@
 import React from 'react'
 
 export default function ResultCards({ summary, runId, trace, onOpenTimeline }: { summary?: any, runId?: string, trace?: string, onOpenTimeline?: () => void }) {
-  if (!summary) return <div className="text-slate-400 text-sm">Run a scenario to see results.</div>
+  if (!summary) return <div className="text-slate-400 text-sm">Run an estimate or expert simulation to see run output.</div>
   const cards = [
     { label: 'Throughput (rps)', value: summary.throughput_rps },
     { label: 'p50 latency (ms)', value: summary.p50_ms },

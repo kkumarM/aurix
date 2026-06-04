@@ -79,6 +79,18 @@ export default function AboutGparx() {
       </div>
 
       <Card className="p-5 space-y-4">
+        <div className="text-lg font-semibold text-slate-100">gPARX Advisor</div>
+        <div className="text-sm text-slate-300">
+          The Advisor layer uses deterministic, explainable rules to diagnose performance, detect bottlenecks, and recommend next actions.
+        </div>
+        <ul className="space-y-2 text-sm text-slate-300">
+          <li className="flex items-start gap-2"><span className="mt-1.5 h-2 w-2 rounded-full bg-emerald-400" />Analyzes simulation or benchmark metrics to find queue, compute, memory, and latency issues.</li>
+          <li className="flex items-start gap-2"><span className="mt-1.5 h-2 w-2 rounded-full bg-emerald-400" />Provides partial guidance when data is missing and warns about missing metrics.</li>
+          <li className="flex items-start gap-2"><span className="mt-1.5 h-2 w-2 rounded-full bg-emerald-400" />Supports a future optional LLM assistant layer that will answer questions over structured advisor facts.</li>
+        </ul>
+      </Card>
+
+      <Card className="p-5 space-y-4">
         <div className="text-lg font-semibold text-slate-100">LLM Cost Planner</div>
         <div className="text-sm text-slate-300">
           The LLM Cost Planner turns LLM-native inputs such as model choice, quantization, tokens, RPS, SLA, and GPU pricing into a generated GPARX scenario, runs the simulator, and returns a decision-oriented capacity and cost estimate.

@@ -43,7 +43,7 @@ export default function GoalLanding({
     {
       title: 'Expert simulation mode',
       description: 'Build a detailed scenario with pipeline stages, queueing, transfers, and compute.',
-      cta: 'Open Scenario Builder',
+      cta: 'Open Expert Mode',
       action: onOpenScenarioBuilder,
     },
   ]
@@ -76,7 +76,7 @@ export default function GoalLanding({
 
         <div className="flex flex-wrap gap-2 text-xs text-slate-400">
           <span>Advanced flows stay available:</span>
-          <Badge>Scenario Builder</Badge>
+          <Badge>Expert Scenario Builder</Badge>
           <Badge>Timeline</Badge>
           <Badge>Sweeps</Badge>
           <Badge>Compare</Badge>

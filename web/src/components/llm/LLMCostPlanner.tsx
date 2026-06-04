@@ -11,7 +11,7 @@ import { computeDiagnosticsFromTrace } from '../../utils/diagnostics'
 
 type Props = {
   backendUrl: string
-  onPlannerRun: (run: any, scenario: any) => void
+  onPlannerRun: (run: any, scenario: any, report: PlannerReport) => void
   onOpenScenario: (scenario: any) => void
   onOpenTimeline: (run: any, scenario: any) => void
   onOpenSweep: (scenario: any, mode: 'rps' | 'con') => void
@@ -132,13 +132,14 @@ export default function LLMCostPlanner({
       }
 
       const nextReport = buildPlannerReport(nextInput, model, gpu, memory, tokenEstimate, summary, diagnostics, generatedScenario)
+      const runWithReport = { ...run, plannerReport: nextReport }
       setInput(nextInput)
-      setLatestRun(run)
+      setLatestRun(runWithReport)
       setReport(nextReport)
-      onPlannerRun(run, generatedScenario)
+      onPlannerRun(runWithReport, generatedScenario, nextReport)
 
       if (options?.compareAgainstRunId && options.openCompare) {
-        onCompareRuns(options.compareAgainstRunId, run.id)
+        onCompareRuns(options.compareAgainstRunId, runWithReport.id)
       }
     } catch (err: any) {
       setError(err?.message || 'Failed to estimate plan')
@@ -401,7 +402,7 @@ export default function LLMCostPlanner({
 
         <div className="space-y-4">
           <Card className="p-5 space-y-4">
-            <div className="text-lg font-semibold text-slate-100">Results panel</div>
+            <div className="text-lg font-semibold text-slate-100">Estimate preview</div>
             {!report && (
               <div className="text-sm text-slate-400">
                 Enter workload, GPU, and pricing inputs, then click <span className="text-slate-200 font-medium">Estimate</span> to turn them into a simulation-backed cost plan.

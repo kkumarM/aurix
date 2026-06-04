@@ -14,7 +14,7 @@ export default function RunResults({ run, loading, error, onOpenTimeline, diagno
   const [explanation, setExplanation] = useState('')
 
   if (error) return <div className="text-red-400">{error}</div>
-  if (loading) return <div className="text-slate-300">Running simulation…</div>
+  if (loading) return <div className="text-slate-300">Running estimate…</div>
   return (
     <div className="space-y-3">
       <DiagnosisCard diagnostics={diagnostics} />
@@ -109,7 +109,7 @@ async function duplicateAndRun(run, profile, ctx) {
     setWhatIfRun(newRun)
     addRun(newRun)
     setRun(newRun)
-    setActiveTab('results')
+    setActiveTab('decision')
   } catch (e) {
     console.error(e)
   } finally {
