@@ -23,6 +23,7 @@ type Props = {
   onOpenPlanner: () => void
   onOpenExpert: () => void
   onOpenSweeps: () => void
+  onExperimentAction: (step: any) => void
 }
 
 const goals = ['latency', 'throughput', 'balanced', 'cost']
@@ -224,7 +225,7 @@ export default function AdvisorWorkspace({ run, scenario, advisor, goal, loading
           </div>
 
           {/* Bottom: Experiment Plan */}
-          <ExperimentPlanPanel advisor={advisor} scenario={scenario} run={run} />
+          <ExperimentPlanPanel advisor={advisor} scenario={scenario} run={run} onAction={onExperimentAction} />
 
           {/* Ask gPARX Placeholder */}
           <Card className="p-5 space-y-3 bg-gradient-to-r from-slate-900/50 to-slate-900/30 border-slate-800">

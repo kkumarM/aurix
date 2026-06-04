@@ -84,7 +84,7 @@ export default function App() {
   const [resizing, setResizing] = useState(false)
   const [savedList, setSavedList] = useState(loadIndex())
   const [wizardRequestKey, setWizardRequestKey] = useState(0)
-  const [sweepRequest, setSweepRequest] = useState({ mode: 'rps', key: 0 })
+  const [sweepRequest, setSweepRequest] = useState({ mode: 'rps', key: 0, config: null })
   const plannerReport = run?.plannerReport || null
   const plannerScenario = plannerReport?.generatedScenario || run?.scenario
   const isPlannerGenerated = Boolean(run?.scenario?.meta?.llm_planner)
@@ -299,12 +299,81 @@ export default function App() {
   }
   const openPlanner = () => setActiveTab('planner')
   const openTraceWorkspace = () => setActiveTab('trace')
-  const openSweepsForScenario = (nextScenario, mode = 'rps') => {
+  const openSweepsForScenario = (nextScenario, mode = 'rps', config = null) => {
     setCollapsed(false)
     setScenario(structuredClone(nextScenario))
-    setSweepRequest({ mode, key: Date.now() })
+    setSweepRequest({ mode, key: Date.now(), config })
     setActiveTab('sweeps')
   }
+
+  const handleExperimentAction = (step) => {
+    if (!step) return
+
+    switch (step.kind) {
+      case 'rps_sweep': {
+        const currentRps = scenario?.workload?.rps || run?.summary?.throughput || 10
+        const start = Math.max(1, Math.floor(currentRps / 4))
+        const end = Math.max(start + 10, Math.ceil(currentRps * 2))
+        const stepSize = Math.max(1, Math.round((end - start) / 5))
+        openSweepsForScenario(run?.scenario || scenario, 'rps', { start, end, step: stepSize, duration: 10 })
+        break
+      }
+      case 'concurrency_sweep': {
+        const currentConcurrency = scenario?.target?.concurrency || 8
+        const start = Math.max(1, Math.floor(currentConcurrency / 2))
+        const end = Math.max(currentConcurrency * 2, currentConcurrency + 4)
+        const stepSize = Math.max(1, Math.round((end - start) / 5))
+        openSweepsForScenario(run?.scenario || scenario, 'con', { start, end, step: stepSize, duration: 10 })
+        break
+      }
+      case 'gpu_compare': {
+        if (!run?.id) {
+          showToast('Load a run before starting a GPU comparison.')
+          break
+        }
+        const otherRun = runs.find((r) => r.id !== run.id)
+        setCompareIds([run.id, otherRun?.id || null])
+        setActiveTab('compare')
+        if (!otherRun) {
+          showToast('Select another run to compare against.')
+        }
+        break
+      }
+      case 'precision_compare': {
+        showToast('Precision comparison is planned. Use Expert mode to modify precision manually.')
+        setCollapsed(false)
+        setActiveTab('expert')
+        break
+      }
+      case 'dynamic_batching_test': {
+        showToast('Dynamic batching is suggested. Use Expert mode to tune preferred batch sizes and queue delay.')
+        setCollapsed(false)
+        setActiveTab('expert')
+        break
+      }
+      case 'trace_calibration': {
+        setActiveTab('timeline')
+        break
+      }
+      case 'batch_size_sweep': {
+        showToast('Batch size reduction can be configured in Expert mode.')
+        setCollapsed(false)
+        setActiveTab('expert')
+        break
+      }
+      case 'manual_followup': {
+        showToast('Manual follow-up recommended. Expert mode is the best place to adjust this.')
+        setCollapsed(false)
+        setActiveTab('expert')
+        break
+      }
+      default: {
+        showToast('Opening Sweeps for the recommended experiment.')
+        openSweepsForScenario(run?.scenario || scenario, 'rps')
+      }
+    }
+  }
+
   const handlePlannerRun = (plannerRun, generatedScenario, report) => {
     const runWithReport = { ...plannerRun, plannerReport: report }
     setScenario(generatedScenario)
@@ -508,6 +577,7 @@ export default function App() {
                 onOpenPlanner={openPlanner}
                 onOpenExpert={openScenarioBuilder}
                 onOpenSweeps={goSweeps}
+                onExperimentAction={handleExperimentAction}
               />
             )}
 
@@ -627,6 +697,7 @@ export default function App() {
                 openRunSummary={openRunSummaryById}
                 requestedTab={sweepRequest.mode}
                 requestedTabKey={sweepRequest.key}
+                requestedConfig={sweepRequest.config}
                 setActiveTab={setActiveTab}
               />
             )}

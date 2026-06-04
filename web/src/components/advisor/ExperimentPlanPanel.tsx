@@ -9,6 +9,7 @@ type Props = {
   advisor: any
   scenario: any
   run: any
+  onAction: (step: ExperimentStep) => void
 }
 
 const kindLabel: Record<string, string> = {
@@ -81,7 +82,7 @@ function renderParameters(step: ExperimentStep) {
   )
 }
 
-export default function ExperimentPlanPanel({ advisor, scenario, run }: Props) {
+export default function ExperimentPlanPanel({ advisor, scenario, run, onAction }: Props) {
   if (!advisor || !advisor.primary_bottleneck) {
     return (
       <Card className="p-5 border border-slate-800 bg-slate-900/80">
@@ -137,7 +138,7 @@ export default function ExperimentPlanPanel({ advisor, scenario, run }: Props) {
             {renderParameters(step)}
 
             <div className="mt-4 flex flex-wrap gap-2">
-              <Button variant="secondary" type="button">{actionLabel[step.kind] || 'Take Action'}</Button>
+              <Button variant="secondary" type="button" onClick={() => onAction(step)}>{actionLabel[step.kind] || 'Take Action'}</Button>
               <Button variant="ghost" type="button">View details</Button>
             </div>
           </Card>

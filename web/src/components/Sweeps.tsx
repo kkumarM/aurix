@@ -6,7 +6,7 @@ import HintPill from './HintPill'
 
 type SweepRun = { id: string; param: number; summary: any }
 
-export default function Sweeps({ backendUrl, baseScenario, addRun, openRun, openRunSummary, requestedTab = 'rps', requestedTabKey = 0, setActiveTab }) {
+export default function Sweeps({ backendUrl, baseScenario, addRun, openRun, openRunSummary, requestedTab = 'rps', requestedTabKey = 0, requestedConfig = null, setActiveTab }) {
   const [rpsCfg, setRpsCfg] = useState(() => loadCfg('rps', { start: 1, end: 8, step: 1, duration: 10 }))
   const [conCfg, setConCfg] = useState(() => loadCfg('con', { start: 1, end: 8, step: 1, duration: 10 }))
   const [rpsRuns, setRpsRuns] = useState(() => loadRuns('rps'))
@@ -22,6 +22,16 @@ export default function Sweeps({ backendUrl, baseScenario, addRun, openRun, open
   useEffect(() => {
     setTab(requestedTab)
   }, [requestedTab, requestedTabKey])
+
+  useEffect(() => {
+    if (!requestedConfig) return
+    if (requestedTab === 'rps') {
+      setRpsCfg((cfg) => ({ ...cfg, ...requestedConfig }))
+    }
+    if (requestedTab === 'con') {
+      setConCfg((cfg) => ({ ...cfg, ...requestedConfig }))
+    }
+  }, [requestedConfig, requestedTab, requestedTabKey])
 
   const rpsKnee = useMemo(() => findKnee(rpsRuns, 'param', 'p99'), [rpsRuns])
   const conRec = useMemo(() => recommendConcurrency(conRuns), [conRuns])
