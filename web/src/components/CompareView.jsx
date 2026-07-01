@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import Card from './ui/Card'
 import Button from './ui/Button'
 import TimelineViewer from './TimelineViewer'
@@ -7,6 +8,12 @@ export default function CompareView({ runs, compareIds, onSelect, backendUrl, on
   const options = runs.map((r) => ({ id: r.id, label: `${r.id} • ${r.summary?.throughput_rps?.toFixed(2) ?? '?'} rps / p99 ${(r.summary?.p99_ms ?? 0).toFixed(1)} ms` }))
   const runA = runs.find((r) => r.id === compareIds[0])
   const runB = runs.find((r) => r.id === compareIds[1])
+
+  // Local state for the stacked timelines
+  const [currentA, setCurrentA] = useState(0)
+  const [currentB, setCurrentB] = useState(0)
+  const [selectedA, setSelectedA] = useState(null)
+  const [selectedB, setSelectedB] = useState(null)
 
   return (
     <div className="space-y-3">
@@ -33,8 +40,32 @@ export default function CompareView({ runs, compareIds, onSelect, backendUrl, on
           <div className="space-y-2">
             <div className="text-xs text-slate-400">Legend: Sim timelines stacked; same zoom/scale.</div>
             <div className="space-y-4">
-              <TimelineViewer runId={runA.id} backendUrl={backendUrl} height={300} compact />
-              <TimelineViewer runId={runB.id} backendUrl={backendUrl} height={300} compact />
+              <TimelineViewer
+                runId={runA.id}
+                backendUrl={backendUrl}
+                height={300}
+                compact
+                current={currentA}
+                onCurrentChange={setCurrentA}
+                zoom={0.4}
+                highlightActive={false}
+                heatOverlay={false}
+                selected={selectedA}
+                onSelect={setSelectedA}
+              />
+              <TimelineViewer
+                runId={runB.id}
+                backendUrl={backendUrl}
+                height={300}
+                compact
+                current={currentB}
+                onCurrentChange={setCurrentB}
+                zoom={0.4}
+                highlightActive={false}
+                heatOverlay={false}
+                selected={selectedB}
+                onSelect={setSelectedB}
+              />
             </div>
           </div>
         </div>
@@ -42,6 +73,7 @@ export default function CompareView({ runs, compareIds, onSelect, backendUrl, on
     </div>
   )
 }
+
 
 function Select({ label, options, value, onChange, onDelete }) {
   return (
