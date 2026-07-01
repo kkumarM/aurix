@@ -14,3 +14,6 @@ dev:
 web-build:
 	npm --prefix web install
 	npm --prefix web run build
+
+run: build web-build
+	./bin/sim-api

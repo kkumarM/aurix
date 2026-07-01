@@ -6,6 +6,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -56,15 +58,27 @@ func main() {
 	r.Post("/v1/scenarios", handleCreateScenario)
 	r.Get("/v1/scenarios/{id}", handleGetScenario)
 	r.Post("/v1/runs", handleCreateRun)
+	r.Get("/v1/runs", handleListRuns)
+	r.Get("/v1/runs/compare", handleCompareRuns)
 	r.Get("/v1/runs/{id}", handleGetRun)
+	r.Delete("/v1/runs/{id}", handleDeleteRun)
 	r.Get("/v1/runs/{id}/trace", handleGetTrace)
 	r.Get("/v1/runs/{id}/breakdown", handleGetBreakdown)
 	r.Post("/v1/agent/diagnose", handleAgentDiagnose)
+
+	// Serve static files from web/dist
+	workDir, _ := os.Getwd()
+	filesDir := http.Dir(filepath.Join(workDir, "web", "dist"))
+	r.Handle("/*", http.FileServer(filesDir))
 
 	addr := ":8080"
 	if v := os.Getenv("PORT"); v != "" {
 		addr = ":" + v
 	}
+
+	// Load existing runs from disk
+	loadAllRunsFromDisk()
+
 	log.Printf("sim-api listening on %s", addr)
 	if err := http.ListenAndServe(addr, r); err != nil {
 		log.Fatalf("server error: %v", err)
@@ -157,6 +171,10 @@ func handleCreateRun(w http.ResponseWriter, r *http.Request) {
 	rnStore.runs[runID] = rec
 	rnStore.mu.Unlock()
 
+	if err := saveRunToDisk(rec); err != nil {
+		log.Printf("failed to save run %s to disk: %v", runID, err)
+	}
+
 	writeJSON(w, http.StatusOK, map[string]interface{}{
 		"run_id":    runID,
 		"summary":   summary,
@@ -173,6 +191,42 @@ func handleGetRun(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, rec.result)
+}
+
+func handleListRuns(w http.ResponseWriter, r *http.Request) {
+	rnStore.mu.RLock()
+	defer rnStore.mu.RUnlock()
+	var runs []schema.RunResult
+	for _, rec := range rnStore.runs {
+		runs = append(runs, rec.result)
+	}
+	sort.Slice(runs, func(i, j int) bool {
+		return runs[i].RunID > runs[j].RunID
+	})
+	writeJSON(w, http.StatusOK, runs)
+}
+
+func handleDeleteRun(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	rnStore.mu.Lock()
+	_, ok := rnStore.runs[id]
+	if ok {
+		delete(rnStore.runs, id)
+	}
+	rnStore.mu.Unlock()
+
+	if !ok {
+		writeError(w, http.StatusNotFound, "run not found")
+		return
+	}
+
+	if err := deleteRunFromDisk(id); err != nil {
+		log.Printf("failed to delete run %s from disk: %v", id, err)
+		writeError(w, http.StatusInternalServerError, "failed to delete run from disk")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]string{"status": "deleted"})
 }
 
 func handleGetTrace(w http.ResponseWriter, r *http.Request) {
@@ -195,6 +249,31 @@ func handleGetBreakdown(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, rec.breakdown)
+}
+
+func handleCompareRuns(w http.ResponseWriter, r *http.Request) {
+	baseID := r.URL.Query().Get("base")
+	compareID := r.URL.Query().Get("compare")
+
+	if baseID == "" || compareID == "" {
+		writeError(w, http.StatusBadRequest, "base and compare query parameters are required")
+		return
+	}
+
+	baseRec, ok := rnStore.get(baseID)
+	if !ok {
+		writeError(w, http.StatusNotFound, "base run not found")
+		return
+	}
+
+	compareRec, ok := rnStore.get(compareID)
+	if !ok {
+		writeError(w, http.StatusNotFound, "compare run not found")
+		return
+	}
+
+	comparison := sim.CompareRuns(baseRec.result.Summary, compareRec.result.Summary, baseID, compareID)
+	writeJSON(w, http.StatusOK, comparison)
 }
 
 func handleAgentDiagnose(w http.ResponseWriter, r *http.Request) {

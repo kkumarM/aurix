@@ -95,3 +95,17 @@ type Summary struct {
 	TotalRequests  int     `json:"total_requests"`
 	DurationS      float64 `json:"duration_s"`
 }
+
+// RunComparison represents the difference between two runs (CompareRun - BaseRun).
+type RunComparison struct {
+	BaseRunID       string  `json:"base_run_id"`
+	CompareRunID    string  `json:"compare_run_id"`
+	DeltaThroughput float64 `json:"delta_throughput_rps"`
+	DeltaP50        float64 `json:"delta_p50_ms"`
+	DeltaP90        float64 `json:"delta_p90_ms"`
+	DeltaP99        float64 `json:"delta_p99_ms"`
+	DeltaQueue      float64 `json:"delta_queue_ms"`
+	DeltaGPUUtil    float64 `json:"delta_gpu_util_percent"`
+	PctThroughput   float64 `json:"pct_throughput"` // e.g. +15.5%
+	PctP99          float64 `json:"pct_p99"`        // e.g. -28.0%
+}

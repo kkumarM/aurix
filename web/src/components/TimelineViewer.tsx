@@ -174,7 +174,7 @@ function LaneRow({ label, spans, zoom, current, onSelect, selected, laneIndex, h
               title={`${s.name} (${s.lane}) ${s.durMs.toFixed(2)} ms`}
               onClick={() => onSelect(s)}
             >
-              {s.name}
+              {widthPx > 30 ? s.name : ''}
             </div>
           )
         })}

@@ -36,10 +36,7 @@ const API = '' // proxied to 8080 via Vite config
 export default function App() {
   const [scenario, setScenario] = useState(() => loadLastScenario())
   const [run, setRun] = useState(null)
-  const [runs, setRuns] = useState(() => {
-    const saved = typeof localStorage !== 'undefined' ? localStorage.getItem('sim_runs') : null
-    return saved ? JSON.parse(saved) : []
-  })
+  const [runs, setRuns] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [toast, setToast] = useState('')
@@ -89,7 +86,7 @@ export default function App() {
   const plannerScenario = plannerReport?.generatedScenario || run?.scenario
   const isPlannerGenerated = Boolean(run?.scenario?.meta?.llm_planner)
 
-  const addRun = (newRun) => setRuns((prev) => [...prev.slice(-9), newRun])
+  const addRun = (newRun) => setRuns((prev) => [newRun, ...prev])
   const goCompare = () => setActiveTab('compare')
   const goSweeps = () => setActiveTab('sweeps')
   const showToast = (message) => {
@@ -98,8 +95,22 @@ export default function App() {
   }
 
   useEffect(() => {
-    localStorage.setItem('sim_runs', JSON.stringify(runs.slice(-10)))
-  }, [runs])
+    let cancelled = false
+    fetch(`${API}/v1/runs`)
+      .then(res => res.json())
+      .then(data => {
+        if (!cancelled && Array.isArray(data)) {
+          const formattedRuns = data.map(r => ({
+            id: r.run_id,
+            summary: r.summary,
+            trace: r.trace_path,
+          }))
+          setRuns(formattedRuns)
+        }
+      })
+      .catch(err => console.error('failed to load runs', err))
+    return () => { cancelled = true }
+  }, [])
 
   useEffect(() => {
     localStorage.setItem('active_tab', activeTab)
@@ -230,6 +241,20 @@ export default function App() {
 
   const handleCompare = (aId, bId) => {
     setCompareIds((prev) => [aId ?? prev[0], bId ?? prev[1]])
+  }
+
+  const handleDeleteRun = async (id) => {
+    if (!confirm('Delete this run?')) return
+    try {
+      const res = await fetch(`${API}/v1/runs/${id}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error('Failed to delete run')
+      setRuns(prev => prev.filter(r => r.id !== id))
+      if (run?.id === id) setRun(null)
+      if (compareIds.includes(id)) setCompareIds(prev => prev.map(c => c === id ? null : c))
+      showToast('Run deleted')
+    } catch (err) {
+      showToast(err.message)
+    }
   }
 
   const openTimeline = () => setActiveTab('timeline')
@@ -498,13 +523,12 @@ export default function App() {
                       <Card className="p-5 space-y-4">
                         <div className="flex flex-wrap items-center gap-2">
                           <div className="text-xl font-semibold text-slate-100">LLM Estimate Decision</div>
-                          <span className={`px-2 py-1 text-xs rounded-full border ${
-                            plannerReport.feasibility === 'Feasible'
-                              ? 'border-emerald-500/40 bg-emerald-500/20 text-emerald-200'
-                              : plannerReport.feasibility === 'Risky'
-                                ? 'border-amber-500/40 bg-amber-500/20 text-amber-100'
-                                : 'border-red-500/40 bg-red-500/20 text-red-200'
-                          }`}>{plannerReport.feasibility}</span>
+                          <span className={`px-2 py-1 text-xs rounded-full border ${plannerReport.feasibility === 'Feasible'
+                            ? 'border-emerald-500/40 bg-emerald-500/20 text-emerald-200'
+                            : plannerReport.feasibility === 'Risky'
+                              ? 'border-amber-500/40 bg-amber-500/20 text-amber-100'
+                              : 'border-red-500/40 bg-red-500/20 text-red-200'
+                            }`}>{plannerReport.feasibility}</span>
                         </div>
                         <div className="grid gap-3 md:grid-cols-3 xl:grid-cols-6">
                           <DecisionMetric label="Required GPU count" value={String(plannerReport.requiredGpus || '—')} />
@@ -636,7 +660,7 @@ export default function App() {
                     <div className={`grid gap-3 ${inspectorOpen ? 'lg:grid-cols-[1fr,280px]' : 'lg:grid-cols-[1fr]'} `} style={{ minHeight: timelineHeight ? 520 : 420 }}>
                       <div className="min-h-[420px]">
                         {storyOpen && (
-                          <div className="absolute z-40">
+                          <div className="mb-4">
                             <StoryMode
                               onSelectLane={(lane) => setHighlightLane(lane)}
                               onClose={() => setStoryOpen(false)}
@@ -685,6 +709,7 @@ export default function App() {
                 backendUrl={API}
                 onOpenSummary={openRunSummaryById}
                 onOpenTimeline={openRunTimelineById}
+                onDeleteRun={handleDeleteRun}
               />
             )}
 

@@ -2,6 +2,7 @@ import React from 'react'
 import Card from './ui/Card'
 import Badge from './ui/Badge'
 import ExperimentPlanPanel from './advisor/ExperimentPlanPanel'
+import { calculateProductionReadiness } from '../utils/productionReadiness'
 
 type Recommendation = {
   title: string
@@ -44,6 +45,7 @@ function formatTimestamp(date: Date | null): string {
 export default function AdvisorWorkspace({ run, scenario, advisor, goal, loading, error, onGoalChange, onRetry, onRunSweep, onOpenPlanner, onOpenExpert, onOpenSweeps }: Props) {
   const empty = !run || !run.summary
   const lastUpdated = run ? new Date() : null
+  const readiness = calculateProductionReadiness({ advisor, run, scenario, goal })
 
   return (
     <div className="space-y-4">
@@ -119,6 +121,53 @@ export default function AdvisorWorkspace({ run, scenario, advisor, goal, loading
             <div>
               <div className="text-[11px] uppercase tracking-[0.12em] text-slate-400">Last updated</div>
               <div className="text-sm text-slate-300 mt-1">{formatTimestamp(lastUpdated)}</div>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {!empty && (
+        <Card className="p-5 border-slate-800 bg-slate-950/80">
+          <div className="grid gap-4 lg:grid-cols-4 items-center">
+            <div>
+              <div className="text-[11px] uppercase tracking-[0.12em] text-slate-400">Production readiness</div>
+              <div className="text-4xl font-bold text-emerald-300 mt-2">{readiness.score}</div>
+            </div>
+            <div className="lg:col-span-2">
+              <div className="text-lg font-semibold text-slate-100">{readiness.summary}</div>
+              <div className="text-sm text-slate-400 mt-1">{readiness.level === 'high' ? 'High confidence for production planning.' : readiness.level === 'medium' ? 'Some gaps remain in the current run data.' : 'Requires more trace validation before production.'}</div>
+            </div>
+            <div className="text-right">
+              <Badge tone={readiness.level === 'high' ? 'success' : readiness.level === 'medium' ? 'warning' : 'danger'}>
+                {readiness.level.toUpperCase()}
+              </Badge>
+            </div>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-3 mt-4 text-sm text-slate-300">
+            <div>
+              <div className="font-semibold text-slate-100">Passed checks</div>
+              <ul className="space-y-1 mt-2">
+                {readiness.passed_checks.slice(0, 3).map((item) => (
+                  <li key={item}>• {item}</li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <div className="font-semibold text-slate-100">Warnings</div>
+              <ul className="space-y-1 mt-2 text-amber-300">
+                {readiness.warnings.slice(0, 3).map((item) => (
+                  <li key={item}>• {item}</li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <div className="font-semibold text-slate-100">Failed checks</div>
+              <ul className="space-y-1 mt-2 text-red-300">
+                {readiness.failed_checks.slice(0, 3).map((item) => (
+                  <li key={item}>• {item}</li>
+                ))}
+              </ul>
             </div>
           </div>
         </Card>
