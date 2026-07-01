@@ -28,3 +28,4 @@ tmp/
 
 # Agent instructions (keep out of repo)
 AGENTS.md
+.aider*
