@@ -240,7 +240,11 @@ export default function App() {
   }
 
   const handleCompare = (aId, bId) => {
-    setCompareIds((prev) => [aId ?? prev[0], bId ?? prev[1]])
+    const normalize = (id) => id || null
+    setCompareIds((prev) => [
+      aId === undefined ? (prev[0] || null) : normalize(aId),
+      bId === undefined ? (prev[1] || null) : normalize(bId),
+    ])
   }
 
   const handleDeleteRun = async (id) => {

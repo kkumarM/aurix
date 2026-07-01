@@ -11,11 +11,11 @@ export default function RunHistory({ runs, onSelectCompare }) {
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <h3 className="font-semibold">Compare Runs</h3>
-        <button className="text-xs text-emerald-400" onClick={() => onSelectCompare(last[0]?.id, last[1]?.id)}>Compare last two</button>
+        <button className="text-xs text-emerald-400" onClick={() => onSelectCompare(last[0]?.id || null, last[1]?.id || null)}>Compare last two</button>
       </div>
       <div className="grid md:grid-cols-2 gap-2">
-        <Select options={options} label="Run A" onChange={(id) => onSelectCompare(id, null)} />
-        <Select options={options} label="Run B" onChange={(id) => onSelectCompare(null, id)} />
+        <Select options={options} label="Run A" onChange={(id) => onSelectCompare(id, undefined)} />
+        <Select options={options} label="Run B" onChange={(id) => onSelectCompare(undefined, id)} />
       </div>
     </div>
   )
